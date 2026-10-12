@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 
 import logging
 
@@ -55,4 +55,4 @@ class Database:
             self.engine.dispose()
             self.engine = None
         if habia_recursos:
-            logging.info("Sesión y conexiones a MySQL cerradas")
+            logging.info("Sesi├│n y conexiones a MySQL cerradas")

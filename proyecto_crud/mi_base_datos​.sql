@@ -145,3 +145,127 @@ SELECT * FROM Pedido;
 SELECT * FROM Domicilio;
 SELECT * FROM DetallePedido;
 SELECT * FROM Usuarios;
+
+    def crear_producto(self, nombre, descripcion, precio, categoria,
+                       disponible=True):
+        nombre = nombre.strip()
+        categoria = categoria.strip()
+        precio = float(precio)
+
+        if not nombre:
+            raise ValueError("El nombre es obligatorio")
+        if not categoria:
+            raise ValueError("La categoría es obligatoria")
+        if precio <= 0:
+            raise ValueError("El precio debe ser mayor que cero")
+
+        conn = self._obtener_conexion()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO productos
+                    (nombre, descripcion, precio, categoria, disponible)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (nombre, descripcion, precio, categoria, disponible),
+                )
+                producto_id = cursor.lastrowid
+            conn.commit()
+            logging.info("Producto creado: %s", nombre)
+            return producto_id
+        except Exception:
+            conn.rollback()
+            logging.exception("Error al crear producto")
+            raise
+
+    def obtener_productos(self):
+        conn = self._obtener_conexion()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, nombre, descripcion, precio, categoria, disponible
+                FROM productos
+                ORDER BY id
+                """
+            )
+            columnas = (
+                "id", "nombre", "descripcion",
+                "precio", "categoria", "disponible"
+            )
+            return [
+                dict(zip(columnas, fila))
+                for fila in cursor.fetchall()
+            ]
+
+    def obtener_producto(self, producto_id):
+        conn = self._obtener_conexion()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, nombre, descripcion, precio, categoria, disponible
+                FROM productos
+                WHERE id = %s
+                """,
+                (producto_id,),
+            )
+            fila = cursor.fetchone()
+
+        if fila is None:
+            return None
+
+        columnas = (
+            "id", "nombre", "descripcion",
+            "precio", "categoria", "disponible"
+        )
+        return dict(zip(columnas, fila))
+
+    def actualizar_producto(self, producto_id, nombre, descripcion,
+                            precio, categoria, disponible=True):
+        nombre = nombre.strip()
+        categoria = categoria.strip()
+        precio = float(precio)
+
+        if not nombre or not categoria:
+            raise ValueError("El nombre y la categoría son obligatorios")
+        if precio <= 0:
+            raise ValueError("El precio debe ser mayor que cero")
+
+        conn = self._obtener_conexion()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE productos
+                    SET nombre = %s, descripcion = %s, precio = %s,
+                        categoria = %s, disponible = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        nombre, descripcion, precio,
+                        categoria, disponible, producto_id
+                    ),
+                )
+                actualizado = cursor.rowcount > 0
+            conn.commit()
+            return actualizado
+        except Exception:
+            conn.rollback()
+            logging.exception("Error al actualizar producto")
+            raise
+
+    def eliminar_producto(self, producto_id):
+        conn = self._obtener_conexion()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM productos WHERE id = %s",
+                    (producto_id,),
+                )
+                eliminado = cursor.rowcount > 0
+            conn.commit()
+            return eliminado
+        except Exception:
+            conn.rollback()
+            logging.exception("Error al eliminar producto")
+            raise
