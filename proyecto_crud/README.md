@@ -1,9 +1,9 @@
 # CRUD de usuarios con MySQL
 
-La aplicación se conecta a MySQL usando `mysql-connector-python`. Está
-configurada para usar la base `restaurante` y la tabla `usuarios`, que debe
-existir con las columnas `id`, `nombre` y `email`. El CRUD no crea ni modifica
-la estructura de la base de datos.
+La aplicación usa SQLAlchemy ORM con MySQL (`mysql-connector-python`) para
+mapear la clase `Usuario` a la tabla `usuarios`. Está configurada para usar la
+base `restaurante`; la tabla debe existir con las columnas `id`, `nombre` y
+`email`. El ORM no crea ni modifica la estructura de la base de datos.
 
 ## Configuración
 

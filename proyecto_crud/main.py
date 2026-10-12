@@ -1,4 +1,4 @@
-import mysql.connector
+from sqlalchemy.exc import SQLAlchemyError
 
 from database import Database
 from models.usuario_DAO import UsuarioDAO
@@ -8,7 +8,7 @@ db = Database()
 
 try:
     db.conectar()
-    usuario_dao = UsuarioDAO(db.conn)
+    usuario_dao = UsuarioDAO(db.sesion)
     while True:
         opcion = mostrar_menu()
         if opcion == "1":
@@ -49,7 +49,7 @@ try:
             break
         else:
             print("Opción inválida")
-except (mysql.connector.Error, RuntimeError, ValueError) as error:
+except (SQLAlchemyError, RuntimeError, ValueError) as error:
     print(f"Error: {error}")
 finally:
     db.desconectar()

@@ -1,8 +1,14 @@
-from dataclasses import dataclass
+from sqlalchemy import String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-@dataclass
-class Usuario:
-    id: int
-    nombre: str
-    email: str
+class Base(DeclarativeBase):
+    pass
+
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)

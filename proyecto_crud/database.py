@@ -1,6 +1,11 @@
 import logging
 
-import mysql.connector
+import logging
+
+from sqlalchemy import URL, create_engine, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
+
 from config import obtener_configuracion_bd
 
 logging.basicConfig(
@@ -11,23 +16,43 @@ logging.basicConfig(
 
 class Database:
     def __init__(self):
-        self.conn = None
+        self.engine: Engine | None = None
+        self._sesion: Session | None = None
+
+    @property
+    def sesion(self) -> Session:
+        if self._sesion is None:
+            raise RuntimeError("Primero debes llamar a conectar()")
+        return self._sesion
 
     def conectar(self):
         try:
-            self.conn = mysql.connector.connect(**obtener_configuracion_bd())
-            with self.conn.cursor() as cursor:
-                cursor.execute("SELECT 1")
-                cursor.fetchone()
+            configuracion = obtener_configuracion_bd()
+            url = URL.create(
+                drivername="mysql+mysqlconnector",
+                username=configuracion["user"],
+                password=configuracion["password"],
+                host=configuracion["host"],
+                port=configuracion["port"],
+                database=configuracion["database"],
+            )
+            self.engine = create_engine(url, pool_pre_ping=True)
+            with self.engine.connect() as conexion:
+                conexion.execute(text("SELECT 1"))
+            self._sesion = Session(self.engine, expire_on_commit=False)
             print("Conectado a BD")
         except Exception:
-            if self.conn is not None and self.conn.is_connected():
-                self.conn.close()
-                self.conn = None
+            self.desconectar()
             logging.exception("No se pudo conectar a MySQL")
             raise
 
     def desconectar(self):
-        if self.conn is not None and self.conn.is_connected():
-            self.conn.close()
-            logging.info("Conexión a MySQL cerrada")
+        habia_recursos = self._sesion is not None or self.engine is not None
+        if self._sesion is not None:
+            self._sesion.close()
+            self._sesion = None
+        if self.engine is not None:
+            self.engine.dispose()
+            self.engine = None
+        if habia_recursos:
+            logging.info("Sesión y conexiones a MySQL cerradas")
