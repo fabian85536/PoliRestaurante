@@ -2,6 +2,10 @@
 
 import logging
 
+#ORM
+# crea la conexión de SQLAlchemy a MySQL y abre una sesión. Esa sesión es el
+#canal por el que se consultan y guardan los datos.
+
 from sqlalchemy import URL, create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session

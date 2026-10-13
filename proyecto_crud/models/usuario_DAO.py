@@ -1,5 +1,8 @@
 import logging
 
+#ORM
+#usa la sesión para crear, buscar, actualizar y eliminar usuarios.
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

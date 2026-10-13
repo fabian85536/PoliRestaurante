@@ -1,3 +1,5 @@
+#ORM
+#define el modelo Usuario: SQLAlchemy lo relaciona con la tabla usuarios y sus columnas id, nombre y email.
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 

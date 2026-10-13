@@ -1,3 +1,5 @@
+#ORM
+#conecta métodos con las opciones del menú.
 from sqlalchemy.exc import SQLAlchemyError
 
 from database import Database
