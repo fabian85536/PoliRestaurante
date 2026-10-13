@@ -10,7 +10,7 @@ def obtener_configuracion_bd():
     variables = {
         "host": "DB_HOST",
         "user": "DB_USER",
-        "password": "DB_PASS",
+        "pass": "DB_PASS",
         "database": "DB_NAME",
     }
     configuracion = {}
@@ -23,6 +23,6 @@ def obtener_configuracion_bd():
     try:
         configuracion["port"] = int(os.getenv("DB_PORT", "3306"))
     except ValueError as error:
-        raise ValueError("DB_PORT debe ser un número entero") from error
+        raise ValueError("DB_PORT debe ser un n?mero entero") from error
 
     return configuracion

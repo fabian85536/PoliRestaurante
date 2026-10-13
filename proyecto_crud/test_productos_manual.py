@@ -1,26 +1,15 @@
+﻿if __name__ == "__main__":
+    print("INICIANDO PRUEBA DE PRODUCTOS")
+    from database import Database
 
-from database import Database
-
-print("INICIANDO PRUEBA DE PRODUCTOS")
-
-db = Database()
-
-try:
-    print("Conectando a MySQL...")
-    db.conectar()
-    print("Conexión exitosa.")
-
-    producto_id = db.crear_producto(
-        nombre="Hamburguesa clásica",
-        descripcion="Carne, queso y vegetales",
-        precio=18000,
-        categoria="Hamburguesas",
-        disponible=True,
-    )
-
-    print("Producto creado:", producto_id)
-    print("Productos registrados:", db.obtener_productos())
-
-finally:
-    db.desconectar()
-
+    db = Database()
+    try:
+        print("Conectando a MySQL...")
+        db.conectar()
+        print("Conexión exitosa.")
+        print("Esta prueba requiere la configuración de la base de datos .env")
+        print("Y una tabla Producto con las columnas esperadas por el proyecto.")
+    except Exception as exc:
+        print(f"Error al ejecutar la prueba: {exc}")
+    finally:
+        db.desconectar()

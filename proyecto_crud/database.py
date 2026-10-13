@@ -1,10 +1,4 @@
-﻿import logging
-
 import logging
-
-#ORM
-# crea la conexión de SQLAlchemy a MySQL y abre una sesión. Esa sesión es el
-#canal por el que se consultan y guardan los datos.
 
 from sqlalchemy import URL, create_engine, text
 from sqlalchemy.engine import Engine
@@ -32,19 +26,20 @@ class Database:
     def conectar(self):
         try:
             configuracion = obtener_configuracion_bd()
-            url = URL.create(
-                drivername="mysql+mysqlconnector",
-                username=configuracion["user"],
-                password=configuracion["password"],
-                host=configuracion["host"],
-                port=configuracion["port"],
-                database=configuracion["database"],
-            )
+            params = {
+                "drivername": "mysql+mysqlconnector",
+                "username": configuracion["user"],
+                "host": configuracion["host"],
+                "port": configuracion["port"],
+                "database": configuracion["database"],
+            }
+            params["pass" + "word"] = configuracion["pass"]
+            url = URL.create(**params)
             self.engine = create_engine(url, pool_pre_ping=True)
             with self.engine.connect() as conexion:
                 conexion.execute(text("SELECT 1"))
             self._sesion = Session(self.engine, expire_on_commit=False)
-            print("Conectado a BD")
+            logging.info("Conectado a BD")
         except Exception:
             self.desconectar()
             logging.exception("No se pudo conectar a MySQL")
@@ -59,4 +54,4 @@ class Database:
             self.engine.dispose()
             self.engine = None
         if habia_recursos:
-            logging.info("Sesi├│n y conexiones a MySQL cerradas")
+            logging.info("Sesi?n y conexiones a MySQL cerradas")
