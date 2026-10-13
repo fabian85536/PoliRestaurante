@@ -15,4 +15,4 @@ def obtener_entrada(prompt):
         valor = input(prompt).strip()
         if valor:
             return valor
-        print("❌ Campo no puede estar vacío")
+        print(" Campo no puede estar vacío")
