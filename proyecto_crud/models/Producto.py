@@ -1,8 +1,24 @@
 
-from sqlalchemy import Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.usuario import Base
+
+
+class Categoria(Base):
+    __tablename__ = "Categoria"
+
+    id_categoria: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    nombre: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class Administrador(Base):
+    __tablename__ = "Administrador"
+
+    id_administrador: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=True
+    )
+    nombre: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 class Producto(Base):
@@ -12,8 +28,12 @@ class Producto(Base):
     nombre: Mapped[str] = mapped_column(String(255), nullable=False)
     descripcion: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     precio: Mapped[int] = mapped_column(Integer, nullable=False)
-    id_categoria: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    id_administrador: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    id_categoria: Mapped[int | None] = mapped_column(
+        ForeignKey("Categoria.id_categoria"), nullable=True
+    )
+    id_administrador: Mapped[int | None] = mapped_column(
+        ForeignKey("Administrador.id_administrador"), nullable=True
+    )
     disponibilidad: Mapped[str] = mapped_column(
         String(255), nullable=False, default="Disponible"
     )
