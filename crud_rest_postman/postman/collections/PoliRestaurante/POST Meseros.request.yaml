@@ -1,0 +1,34 @@
+$kind: http-request
+name: POST Meseros
+method: POST
+url: 'http://127.0.0.1:5000/api/meseros'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Juan Pérez",
+      "usuario": "jperez",
+      "contrasena": "segura123"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Response has required fields", function () {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("id_mesero");
+          pm.expect(body).to.have.property("nombre");
+          pm.expect(body).to.have.property("usuario");
+      });
+
+      pm.test("Response time is under 1000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1000);
+      });
