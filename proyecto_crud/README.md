@@ -2,7 +2,7 @@
 
 La aplicación usa SQLAlchemy ORM con MySQL (`mysql-connector-python`) para
 mapear los modelos a las tablas de `restaurante`. Incluye CRUD para usuarios,
-productos, meseros, administradores, mesas y pedidos. El ORM no crea ni modifica
+productos, meseros, administradores, personal de cocina, mesas y pedidos. El ORM no crea ni modifica
 la estructura de la base de datos.
 
 ## Configuración
@@ -37,8 +37,8 @@ Las operaciones nuevas usan las tablas `Mesero`, `Administrador`, `Mesa` y
 administradores y mesas ya definidas en el SQL del proyecto. El CRUD no crea
 automáticamente la base ni las tablas.
 
-En el menú principal, las opciones 12 a 15 abren los CRUD de meseros,
-administradores, mesas y pedidos, respectivamente. Las contraseñas no se
+En el menú principal, las opciones 12 a 16 abren los CRUD de meseros,
+administradores, mesas, pedidos y personal de cocina. Las contraseñas no se
 muestran al listar registros.
 
 ## Pruebas

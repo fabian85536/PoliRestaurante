@@ -115,6 +115,40 @@ class RestApiTests(unittest.TestCase):
             self.client.delete(f"/api/meseros/{staff_id}").status_code, 204
         )
 
+    def test_personal_cocina_crud_and_password_is_not_returned(self):
+        created = self.client.post(
+            "/api/personal_cocina",
+            json={
+                "nombre": "Chef",
+                "usuario": "chef",
+                "contrasena": "secreto",
+            },
+        )
+        self.assertEqual(created.status_code, 201)
+        created_json = self.response_json(created)
+        cocina_id = created_json["id_cocina"]
+        self.assertNotIn("contrasena", created_json)
+        records = self.client.get("/api/personal_cocina").get_json()
+        self.assertIsInstance(records, list)
+        self.assertEqual(records[0]["usuario"], "chef")
+        self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/personal_cocina/{cocina_id}")
+            )["nombre"],
+            "Chef",
+        )
+        updated = self.client.patch(
+            f"/api/personal_cocina/{cocina_id}",
+            json={"nombre": "Chef principal"},
+        )
+        self.assertEqual(
+            self.response_json(updated)["nombre"], "Chef principal"
+        )
+        self.assertEqual(
+            self.client.delete(f"/api/personal_cocina/{cocina_id}").status_code,
+            204,
+        )
+
     def test_product_and_order_crud(self):
         product = self.client.post(
             "/api/productos",

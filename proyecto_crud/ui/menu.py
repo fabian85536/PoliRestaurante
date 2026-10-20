@@ -20,6 +20,7 @@ def mostrar_menu():
     print("13. CRUD de administradores")
     print("14. CRUD de mesas")
     print("15. CRUD de pedidos")
+    print("16. CRUD de personal de cocina")
     return input("Opción: ")
 
 

@@ -12,6 +12,7 @@ from models.mesero_DAO import MeseroDAO
 from models.pedido import Pedido
 from models.pedido_DAO import PedidoDAO
 from models.personal_cocina import PersonalCocina
+from models.personal_cocina_DAO import PersonalCocinaDAO
 from models.usuario import Base
 
 
@@ -24,6 +25,7 @@ class TestEntidadesDAO(unittest.TestCase):
         self.administrador_dao = AdministradorDAO(self.sesion)
         self.mesa_dao = MesaDAO(self.sesion)
         self.pedido_dao = PedidoDAO(self.sesion)
+        self.personal_cocina_dao = PersonalCocinaDAO(self.sesion)
 
     def tearDown(self):
         self.sesion.close()
@@ -63,6 +65,29 @@ class TestEntidadesDAO(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "nombre es obligatorio"):
             self.administrador_dao.crear_administrador("", "admin2", "secreto")
         self.assertTrue(self.administrador_dao.eliminar(administrador_id))
+
+    def test_personal_cocina_crud_y_oculta_contrasena(self):
+        cocina_id = self.personal_cocina_dao.crear_personal_cocina(
+            " Chef ", " chef ", "secreto"
+        )
+        personal = self.personal_cocina_dao.obtener_por_id(cocina_id)
+        self.assertEqual(personal.nombre, "Chef")
+        self.assertEqual(
+            personal.to_dict(),
+            {"id_cocina": cocina_id, "nombre": "Chef", "usuario": "chef"},
+        )
+        self.assertEqual(len(self.personal_cocina_dao.obtener_personal_cocina()), 1)
+        self.assertTrue(
+            self.personal_cocina_dao.actualizar(cocina_id, nombre="Chef principal")
+        )
+        self.assertEqual(
+            self.personal_cocina_dao.obtener_por_id(cocina_id).nombre,
+            "Chef principal",
+        )
+        with self.assertRaisesRegex(ValueError, "nombre es obligatorio"):
+            self.personal_cocina_dao.crear_personal_cocina("", "chef2", "secreto")
+        self.assertTrue(self.personal_cocina_dao.eliminar(cocina_id))
+        self.assertIsNone(self.personal_cocina_dao.obtener_por_id(cocina_id))
 
     def test_mesa_crud_y_referencia_administrador(self):
         administrador = Administrador(

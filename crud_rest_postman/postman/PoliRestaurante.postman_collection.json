@@ -12,6 +12,7 @@
     { "key": "productoId", "value": "1" },
     { "key": "meseroId", "value": "1" },
     { "key": "administradorId", "value": "1" },
+    { "key": "cocinaId", "value": "1" },
     { "key": "mesaId", "value": "1" },
     { "key": "pedidoId", "value": "1" }
   ],
@@ -84,6 +85,71 @@
         { "name": "Consultar mesa", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/mesas/{{mesaId}}" } } },
         { "name": "Actualizar mesa", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Ocupada\"\n}" }, "url": { "raw": "{{baseUrl}}/api/mesas/{{mesaId}}" } } },
         { "name": "Eliminar mesa", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/mesas/{{mesaId}}" } } }
+      ]
+    },
+    {
+      "name": "Personal de cocina",
+      "item": [
+        {
+          "name": "Crear personal de cocina",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.to.have.status(201);",
+                  "const personal = pm.response.json();",
+                  "pm.expect(personal.nombre).to.eql('Chef');",
+                  "pm.expect(personal).not.to.have.property('contrasena');",
+                  "pm.collectionVariables.set('cocinaId', personal.id_cocina);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Chef\",\n  \"usuario\": \"chef\",\n  \"contrasena\": \"cambiar-esta-clave\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/personal_cocina" }
+          }
+        },
+        {
+          "name": "Listar personal de cocina",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/personal_cocina" }
+          }
+        },
+        {
+          "name": "Consultar personal de cocina",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/personal_cocina/{{cocinaId}}" }
+          }
+        },
+        {
+          "name": "Actualizar personal de cocina",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Chef actualizado\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/personal_cocina/{{cocinaId}}" }
+          }
+        },
+        {
+          "name": "Eliminar personal de cocina",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/personal_cocina/{{cocinaId}}" }
+          }
+        }
       ]
     },
     {

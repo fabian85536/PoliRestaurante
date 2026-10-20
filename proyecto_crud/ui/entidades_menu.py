@@ -10,6 +10,7 @@ MESERO_CAMPOS = (
     ("contrasena", "Contraseña", "secreto", True, None),
 )
 ADMINISTRADOR_CAMPOS = MESERO_CAMPOS
+PERSONAL_COCINA_CAMPOS = MESERO_CAMPOS
 MESA_CAMPOS = (
     ("numero", "Número de mesa", "entero", True, 1),
     ("estado", "Estado", "texto", True, None),

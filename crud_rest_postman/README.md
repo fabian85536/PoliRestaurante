@@ -52,6 +52,7 @@ parcialmente y `DELETE /<id>` para eliminar:
 | Productos | `/api/productos` | `id` |
 | Meseros | `/api/meseros` | `id_mesero` |
 | Administradores | `/api/administradores` | `id_administrador` |
+| Personal de cocina | `/api/personal_cocina` | `id_cocina` |
 | Mesas | `/api/mesas` | `id_mesa` |
 | Pedidos | `/api/pedidos` | `id_pedido` |
 

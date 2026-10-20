@@ -7,6 +7,7 @@ from models.administrador_DAO import AdministradorDAO
 from models.mesa_DAO import MesaDAO
 from models.mesero_DAO import MeseroDAO
 from models.pedido_DAO import PedidoDAO
+from models.personal_cocina_DAO import PersonalCocinaDAO
 from models.producto_DAO import ProductoDAO
 from models.usuario_DAO import UsuarioDAO
 from ui.entidades_menu import (
@@ -14,6 +15,7 @@ from ui.entidades_menu import (
     MESA_CAMPOS,
     MESERO_CAMPOS,
     PEDIDO_CAMPOS,
+    PERSONAL_COCINA_CAMPOS,
     ejecutar_menu_entidad,
 )
 from ui.menu import (
@@ -53,6 +55,7 @@ try:
     administrador_dao = AdministradorDAO(db.sesion)
     mesa_dao = MesaDAO(db.sesion)
     pedido_dao = PedidoDAO(db.sesion)
+    personal_cocina_dao = PersonalCocinaDAO(db.sesion)
     while True:
         opcion = mostrar_menu()
         if opcion == "1":
@@ -249,6 +252,15 @@ try:
                 PEDIDO_CAMPOS,
                 pedido_dao.crear_pedido,
                 pedido_dao.obtener_pedidos,
+            )
+        elif opcion == "16":
+            ejecutar_menu_entidad(
+                personal_cocina_dao,
+                "Personal de cocina",
+                "Personal de cocina",
+                PERSONAL_COCINA_CAMPOS,
+                personal_cocina_dao.crear_personal_cocina,
+                personal_cocina_dao.obtener_personal_cocina,
             )
         else:
             print("Opción inválida")

@@ -17,6 +17,7 @@ from models.administrador_DAO import AdministradorDAO
 from models.mesa_DAO import MesaDAO
 from models.mesero_DAO import MeseroDAO
 from models.pedido_DAO import PedidoDAO
+from models.personal_cocina_DAO import PersonalCocinaDAO
 from models.producto_DAO import ProductoDAO
 from models.usuario import Usuario
 from models.usuario_DAO import UsuarioDAO
@@ -170,7 +171,11 @@ def _staff_resource(dao_factory: Callable, id_field: str) -> Resource:
             field: _string(payload, field, required=True)
             for field in fields
         }
-        return dao.crear_mesero(**data) if id_field == "id_mesero" else dao.crear_administrador(**data)
+        if id_field == "id_mesero":
+            return dao.crear_mesero(**data)
+        if id_field == "id_administrador":
+            return dao.crear_administrador(**data)
+        return dao.crear_personal_cocina(**data)
 
     def update(dao, record_id, payload):
         fields = {"nombre", "usuario", "contrasena"}
@@ -190,8 +195,12 @@ def _staff_resource(dao_factory: Callable, id_field: str) -> Resource:
         list_records = lambda dao: dao.obtener_meseros()
         find_record = lambda dao, record_id: dao.obtener_por_id(record_id)
         delete = lambda dao, record_id: dao.eliminar(record_id)
-    else:
+    elif id_field == "id_administrador":
         list_records = lambda dao: dao.obtener_administradores()
+        find_record = lambda dao, record_id: dao.obtener_por_id(record_id)
+        delete = lambda dao, record_id: dao.eliminar(record_id)
+    else:
+        list_records = lambda dao: dao.obtener_personal_cocina()
         find_record = lambda dao, record_id: dao.obtener_por_id(record_id)
         delete = lambda dao, record_id: dao.eliminar(record_id)
 
@@ -289,6 +298,7 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
         "administradores": _staff_resource(
             AdministradorDAO, "id_administrador"
         ),
+        "personal_cocina": _staff_resource(PersonalCocinaDAO, "id_cocina"),
         "mesas": Resource(
             dao_factory=MesaDAO,
             list_records=lambda dao: dao.obtener_mesas(),
