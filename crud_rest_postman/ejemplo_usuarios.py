@@ -5,8 +5,8 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 usuarios = [
-    {"id": 1, "nombre": "Juan", "email": "juan@ex.com", "edad": 0},
-    {"id": 2, "nombre": "Maria", "email": "maria@ex.com", "edad": 0},
+    {"id": 1, "nombre": "Juan", "email": "juan@ex.com"},
+    {"id": 2, "nombre": "Maria", "email": "maria@ex.com"},
 ]
 
 
@@ -88,8 +88,9 @@ def crear_usuario():
         "id": nuevo_id,
         "nombre": nombre.strip(),
         "email": email.strip(),
-        "edad": edad,
     }
+    if "edad" in datos:
+        nuevo_usuario["edad"] = edad
     usuarios.append(nuevo_usuario)
     response = jsonify(nuevo_usuario)
     response.status_code = 201
@@ -116,7 +117,7 @@ def actualizar_usuario(usuario_id):
 
     nombre = datos.get("nombre", usuario["nombre"])
     email = datos.get("email", usuario["email"])
-    edad = datos.get("edad", usuario["edad"])
+    edad = datos.get("edad", usuario.get("edad", 0))
     if not isinstance(nombre, str) or not nombre.strip():
         return jsonify(error="El nombre debe ser texto no vacío."), 400
     if not isinstance(email, str):
@@ -124,7 +125,9 @@ def actualizar_usuario(usuario_id):
     if isinstance(edad, bool) or not isinstance(edad, int) or edad < 0:
         return jsonify(error="La edad debe ser un entero no negativo."), 400
 
-    usuario.update(nombre=nombre.strip(), email=email.strip(), edad=edad)
+    usuario.update(nombre=nombre.strip(), email=email.strip())
+    if "edad" in datos or "edad" in usuario:
+        usuario["edad"] = edad
     return jsonify(usuario), 200
 
 

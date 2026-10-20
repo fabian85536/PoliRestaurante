@@ -8,13 +8,8 @@ class EjemploUsuariosTests(unittest.TestCase):
         usuarios.clear()
         usuarios.extend(
             [
-                {"id": 1, "nombre": "Juan", "email": "juan@ex.com", "edad": 0},
-                {
-                    "id": 2,
-                    "nombre": "Maria",
-                    "email": "maria@ex.com",
-                    "edad": 0,
-                },
+                {"id": 1, "nombre": "Juan", "email": "juan@ex.com"},
+                {"id": 2, "nombre": "Maria", "email": "maria@ex.com"},
             ]
         )
         app.config.update(TESTING=True)
@@ -23,7 +18,13 @@ class EjemploUsuariosTests(unittest.TestCase):
     def test_get_list_and_user_by_both_routes(self):
         response = self.client.get("/api/usuarios")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.get_json()), 2)
+        self.assertEqual(
+            response.get_json(),
+            [
+                {"id": 1, "nombre": "Juan", "email": "juan@ex.com"},
+                {"id": 2, "nombre": "Maria", "email": "maria@ex.com"},
+            ],
+        )
 
         for path in ("/api/usuarios/1", "/usuario/1"):
             response = self.client.get(path)

@@ -7,6 +7,7 @@
   },
   "variable": [
     { "key": "baseUrl", "value": "http://127.0.0.1:5000" },
+    { "key": "demoUrl", "value": "http://127.0.0.1:5001" },
     { "key": "usuarioId", "value": "1" },
     { "key": "productoId", "value": "1" },
     { "key": "meseroId", "value": "1" },
@@ -97,6 +98,111 @@
         { "name": "Consultar pedido", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}" } } },
         { "name": "Actualizar pedido", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Cerrado\"\n}" }, "url": { "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}" } } },
         { "name": "Eliminar pedido", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}" } } }
+      ]
+    },
+    {
+      "name": "Ejemplo en memoria",
+      "item": [
+        {
+          "name": "Crear usuario Carlos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Responde con HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "const usuario = pm.response.json();",
+                  "pm.test('Devuelve los datos del usuario creado', function () {",
+                  "    pm.expect(usuario.id).to.be.a('number');",
+                  "    pm.expect(usuario.nombre).to.eql('Carlos');",
+                  "    pm.expect(usuario.email).to.eql('carlos@ex.com');",
+                  "});",
+                  "pm.collectionVariables.set('demoUsuarioId', usuario.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos\",\n  \"email\": \"carlos@ex.com\"\n}"
+            },
+            "url": { "raw": "{{demoUrl}}/crear" }
+          }
+        },
+        {
+          "name": "Actualizar usuario Juan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Responde con HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const usuario = pm.response.json();",
+                  "pm.test('Devuelve los datos actualizados de Juan', function () {",
+                  "    pm.expect(usuario.id).to.eql(1);",
+                  "    pm.expect(usuario.nombre).to.eql('Juan Actualizado');",
+                  "    pm.expect(usuario.email).to.eql('juan.nuevo@ex.com');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Actualizado\",\n  \"email\": \"juan.nuevo@ex.com\"\n}"
+            },
+            "url": { "raw": "{{demoUrl}}/api/usuarios/1" }
+          }
+        },
+        {
+          "name": "Eliminar usuario Juan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Responde con HTTP 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test('La respuesta no tiene cuerpo', function () {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({ url: pm.variables.replaceIn('{{demoUrl}}/api/usuarios/1'), method: 'GET' }, function (error, response) {",
+                  "    pm.test('El usuario eliminado ya no existe', function () {",
+                  "        pm.expect(error).to.equal(null);",
+                  "        pm.expect(response.code).to.eql(404);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{demoUrl}}/api/usuarios/1" }
+          }
+        }
       ]
     }
   ]
