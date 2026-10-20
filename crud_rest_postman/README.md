@@ -19,6 +19,27 @@ no has creado las tablas. El servidor escucha en `http://127.0.0.1:5000`.
 
 Este servidor integrado de Flask es para desarrollo local, no para producción.
 
+## Ejemplos didácticos en memoria
+
+`ejemplo_usuarios.py` reúne los ejemplos Flask de usuarios que aparecen en el
+flujo de Postman. Utiliza una lista en memoria, separada de la base de datos y
+del servicio principal. Desde la raíz del repositorio, ejecútalo con:
+
+```powershell
+.\.venv\Scripts\python.exe .\crud_rest_postman\ejemplo_usuarios.py
+```
+
+El ejemplo escucha en `http://127.0.0.1:5001`; puedes comprobar la lista con
+`GET /api/usuarios` o por ID con `GET /usuario/1`. También acepta la creación
+por `POST /crear` o `POST /api/usuarios`, y la actualización y eliminación
+por `PUT` y `DELETE` en `/api/usuarios/<id>`. Los registros de ejemplo se
+reinician cuando detienes el servidor. Esta API en memoria es para practicar;
+el servicio CRUD principal continúa en el puerto 5000 y utiliza MySQL.
+También puedes probar `GET /calcular?numero=25`: devuelve el entero recibido
+como `resultado`, usa `0` si no envías `numero` y responde HTTP 400 si no es
+un número válido. Las rutas inexistentes y los errores internos devuelven
+respuestas JSON de error.
+
 ## Recursos
 
 Todos los recursos se encuentran bajo `/api` y aceptan `GET` para listar,
