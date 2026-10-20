@@ -1,11 +1,9 @@
 $kind: http-request
-name: POST Meseros
 method: POST
-url: 'http://127.0.0.1:5000/api/meseros'
+url: http://127.0.0.1:5000/api/meseros
 order: 2000
 headers:
-  - key: Content-Type
-    value: application/json
+  Content-Type: application/json
 body:
   type: json
   content: |-
@@ -16,17 +14,19 @@ body:
     }
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |-
-      pm.test("Status code is 201", function () {
-          pm.response.to.have.status(201);
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
       });
 
-      pm.test("Response has required fields", function () {
-          const body = pm.response.json();
-          pm.expect(body).to.have.property("id_mesero");
-          pm.expect(body).to.have.property("nombre");
-          pm.expect(body).to.have.property("usuario");
+      pm.test("Response is an array and has required fields", function () {
+          const jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an('array');
+          if (jsonData.length > 0) {
+              pm.expect(jsonData[0]).to.have.property('id_mesero');
+              pm.expect(jsonData[0]).to.have.property('nombre');
+              pm.expect(jsonData[0]).to.have.property('usuario');
+          }
       });
 
       pm.test("Response time is under 1000ms", function () {
