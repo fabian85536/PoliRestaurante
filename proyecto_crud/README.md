@@ -1,9 +1,9 @@
-# CRUD de usuarios con MySQL
+# CRUD de restaurante con MySQL
 
 La aplicación usa SQLAlchemy ORM con MySQL (`mysql-connector-python`) para
-mapear la clase `Usuario` a la tabla `usuarios`. Está configurada para usar la
-base `restaurante`; la tabla debe existir con las columnas `id`, `nombre` y
-`email`. El ORM no crea ni modifica la estructura de la base de datos.
+mapear los modelos a las tablas de `restaurante`. Incluye CRUD para usuarios,
+productos, meseros, administradores, mesas y pedidos. El ORM no crea ni modifica
+la estructura de la base de datos.
 
 ## Configuración
 
@@ -29,21 +29,17 @@ base `restaurante`; la tabla debe existir con las columnas `id`, `nombre` y
 
 No compartas ni subas el archivo `.env`; contiene las credenciales de acceso.
 
-## Tabla usada por el CRUD
+## Tablas usadas por el CRUD
 
-El archivo SQL del proyecto define esta tabla. Confirma que hayas importado el
-SQL en tu servidor MySQL y que la tabla exista dentro de `restaurante`:
+Importa `mi_base_datos.sql` en tu servidor MySQL para crear el esquema esperado.
+Las operaciones nuevas usan las tablas `Mesero`, `Administrador`, `Mesa` y
+`Pedido`, incluyendo las referencias a meseros, personal de cocina,
+administradores y mesas ya definidas en el SQL del proyecto. El CRUD no crea
+automáticamente la base ni las tablas.
 
-```sql
-CREATE TABLE usuarios (
-    id INT NOT NULL AUTO_INCREMENT,
-    nombre VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-```
-
-La aplicación no crea automáticamente la base ni la tabla. No ejecutes el
-bloque anterior si `usuarios` ya existe.
+En el menú principal, las opciones 12 a 15 abren los CRUD de meseros,
+administradores, mesas y pedidos, respectivamente. Las contraseñas no se
+muestran al listar registros.
 
 ## Pruebas
 
@@ -51,4 +47,10 @@ Las pruebas usan una conexión simulada y no acceden al servidor MySQL:
 
 ```powershell
 python -m unittest -v test_database.py
+```
+
+Prueba también los productos y las cuatro entidades nuevas:
+
+```powershell
+python -m unittest -v test_producto_dao.py test_entidades_dao.py
 ```

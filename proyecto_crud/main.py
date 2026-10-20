@@ -3,8 +3,19 @@
 from sqlalchemy.exc import SQLAlchemyError
 
 from database import Database
+from models.administrador_DAO import AdministradorDAO
+from models.mesa_DAO import MesaDAO
+from models.mesero_DAO import MeseroDAO
+from models.pedido_DAO import PedidoDAO
 from models.producto_DAO import ProductoDAO
 from models.usuario_DAO import UsuarioDAO
+from ui.entidades_menu import (
+    ADMINISTRADOR_CAMPOS,
+    MESA_CAMPOS,
+    MESERO_CAMPOS,
+    PEDIDO_CAMPOS,
+    ejecutar_menu_entidad,
+)
 from ui.menu import (
     mostrar_menu,
     obtener_confirmacion,
@@ -38,6 +49,10 @@ try:
     db.conectar()
     usuario_dao = UsuarioDAO(db.sesion)
     producto_dao = ProductoDAO(db.sesion)
+    mesero_dao = MeseroDAO(db.sesion)
+    administrador_dao = AdministradorDAO(db.sesion)
+    mesa_dao = MesaDAO(db.sesion)
+    pedido_dao = PedidoDAO(db.sesion)
     while True:
         opcion = mostrar_menu()
         if opcion == "1":
@@ -199,6 +214,42 @@ try:
                 print("No se encontró ese producto")
         elif opcion == "11":
             break
+        elif opcion == "12":
+            ejecutar_menu_entidad(
+                mesero_dao,
+                "Mesero",
+                "Meseros",
+                MESERO_CAMPOS,
+                mesero_dao.crear_mesero,
+                mesero_dao.obtener_meseros,
+            )
+        elif opcion == "13":
+            ejecutar_menu_entidad(
+                administrador_dao,
+                "Administrador",
+                "Administradores",
+                ADMINISTRADOR_CAMPOS,
+                administrador_dao.crear_administrador,
+                administrador_dao.obtener_administradores,
+            )
+        elif opcion == "14":
+            ejecutar_menu_entidad(
+                mesa_dao,
+                "Mesa",
+                "Mesas",
+                MESA_CAMPOS,
+                mesa_dao.crear_mesa,
+                mesa_dao.obtener_mesas,
+            )
+        elif opcion == "15":
+            ejecutar_menu_entidad(
+                pedido_dao,
+                "Pedido",
+                "Pedidos",
+                PEDIDO_CAMPOS,
+                pedido_dao.crear_pedido,
+                pedido_dao.obtener_pedidos,
+            )
         else:
             print("Opción inválida")
 except (SQLAlchemyError, RuntimeError, ValueError) as error:

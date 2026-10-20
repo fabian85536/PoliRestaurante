@@ -2,6 +2,7 @@
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from models.administrador import Administrador
 from models.usuario import Base
 
 
@@ -9,15 +10,6 @@ class Categoria(Base):
     __tablename__ = "Categoria"
 
     id_categoria: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    nombre: Mapped[str | None] = mapped_column(String(255), nullable=True)
-
-
-class Administrador(Base):
-    __tablename__ = "Administrador"
-
-    id_administrador: Mapped[int] = mapped_column(
-        primary_key=True, autoincrement=True
-    )
     nombre: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 

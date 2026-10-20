@@ -16,6 +16,10 @@ def mostrar_menu():
     print("9. Actualizar producto")
     print("10. Eliminar producto")
     print("11. Salir")
+    print("12. CRUD de meseros")
+    print("13. CRUD de administradores")
+    print("14. CRUD de mesas")
+    print("15. CRUD de pedidos")
     return input("Opción: ")
 
 
