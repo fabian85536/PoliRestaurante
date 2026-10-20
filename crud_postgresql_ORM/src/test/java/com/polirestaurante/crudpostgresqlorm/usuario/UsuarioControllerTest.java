@@ -1,6 +1,8 @@
 package com.polirestaurante.crudpostgresqlorm.usuario;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -103,5 +105,19 @@ class UsuarioControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void buscaUsuariosPorNombreYEmailConMetodosDerivados() {
+        repository.save(new Usuario("Ana", "ana@example.com"));
+        repository.save(new Usuario("Ana", "ana.otra@example.com"));
+        repository.save(new Usuario("Luis", "luis@example.com"));
+        repository.flush();
+
+        assertEquals(2, repository.findByNombre("Ana").size());
+        assertEquals(
+                "Ana",
+                repository.findByEmail("ana@example.com").getNombre());
+        assertNull(repository.findByEmail("inexistente@example.com"));
     }
 }
