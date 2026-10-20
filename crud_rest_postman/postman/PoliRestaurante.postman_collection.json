@@ -1,0 +1,103 @@
+{
+  "info": {
+    "_postman_id": "0c1c2a2a-9d08-4a63-91f8-2c9f1aa98c1d",
+    "name": "PoliRestaurante - CRUD REST",
+    "description": "CRUD REST para usuarios, productos, meseros, administradores, mesas y pedidos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:5000" },
+    { "key": "usuarioId", "value": "1" },
+    { "key": "productoId", "value": "1" },
+    { "key": "meseroId", "value": "1" },
+    { "key": "administradorId", "value": "1" },
+    { "key": "mesaId", "value": "1" },
+    { "key": "pedidoId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Crear usuario",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('usuarioId', pm.response.json().id);"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Ana\",\n  \"email\": \"ana.{{$guid}}@example.com\"\n}" }, "url": { "raw": "{{baseUrl}}/api/usuarios" } }
+        },
+        { "name": "Listar usuarios", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/usuarios" } } },
+        { "name": "Consultar usuario", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}" } } },
+        { "name": "Actualizar usuario", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Ana Actualizada\"\n}" }, "url": { "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}" } } },
+        { "name": "Eliminar usuario", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}" } } }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Crear producto",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('productoId', pm.response.json().id);"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Jugo natural\",\n  \"descripcion\": \"Jugo de mango\",\n  \"precio\": 8000,\n  \"disponible\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/productos" } }
+        },
+        { "name": "Listar productos", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/productos" } } },
+        { "name": "Consultar producto", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/productos/{{productoId}}" } } },
+        { "name": "Actualizar producto", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"precio\": 9000,\n  \"disponible\": false\n}" }, "url": { "raw": "{{baseUrl}}/api/productos/{{productoId}}" } } },
+        { "name": "Eliminar producto", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/productos/{{productoId}}" } } }
+      ]
+    },
+    {
+      "name": "Meseros",
+      "item": [
+        {
+          "name": "Crear mesero",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('meseroId', pm.response.json().id_mesero);"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Luis\",\n  \"usuario\": \"luis\",\n  \"contrasena\": \"cambiar-esta-clave\"\n}" }, "url": { "raw": "{{baseUrl}}/api/meseros" } }
+        },
+        { "name": "Listar meseros", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/meseros" } } },
+        { "name": "Consultar mesero", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/meseros/{{meseroId}}" } } },
+        { "name": "Actualizar mesero", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Luis Actualizado\"\n}" }, "url": { "raw": "{{baseUrl}}/api/meseros/{{meseroId}}" } } },
+        { "name": "Eliminar mesero", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/meseros/{{meseroId}}" } } }
+      ]
+    },
+    {
+      "name": "Administradores",
+      "item": [
+        {
+          "name": "Crear administrador",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('administradorId', pm.response.json().id_administrador);"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Marta\",\n  \"usuario\": \"marta\",\n  \"contrasena\": \"cambiar-esta-clave\"\n}" }, "url": { "raw": "{{baseUrl}}/api/administradores" } }
+        },
+        { "name": "Listar administradores", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/administradores" } } },
+        { "name": "Consultar administrador", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/administradores/{{administradorId}}" } } },
+        { "name": "Actualizar administrador", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Marta Actualizada\"\n}" }, "url": { "raw": "{{baseUrl}}/api/administradores/{{administradorId}}" } } },
+        { "name": "Eliminar administrador", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/administradores/{{administradorId}}" } } }
+      ]
+    },
+    {
+      "name": "Mesas",
+      "item": [
+        {
+          "name": "Crear mesa",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('mesaId', pm.response.json().id_mesa);"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"numero\": 1,\n  \"estado\": \"Libre\"\n}" }, "url": { "raw": "{{baseUrl}}/api/mesas" } }
+        },
+        { "name": "Listar mesas", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/mesas" } } },
+        { "name": "Consultar mesa", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/mesas/{{mesaId}}" } } },
+        { "name": "Actualizar mesa", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Ocupada\"\n}" }, "url": { "raw": "{{baseUrl}}/api/mesas/{{mesaId}}" } } },
+        { "name": "Eliminar mesa", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/mesas/{{mesaId}}" } } }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Crear pedido",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('pedidoId', pm.response.json().id_pedido);"], "type": "text/javascript" } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"tipo_pedido\": \"Mesa\",\n  \"nombre_cliente\": \"Cliente de prueba\",\n  \"estado\": \"Abierto\",\n  \"total\": 8000\n}" }, "url": { "raw": "{{baseUrl}}/api/pedidos" } }
+        },
+        { "name": "Listar pedidos", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/pedidos" } } },
+        { "name": "Consultar pedido", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}" } } },
+        { "name": "Actualizar pedido", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"estado\": \"Cerrado\"\n}" }, "url": { "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}" } } },
+        { "name": "Eliminar pedido", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}" } } }
+      ]
+    }
+  ]
+}
