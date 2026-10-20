@@ -15,7 +15,7 @@ Spring Data JPA. La API expone operaciones CRUD en `/api/usuarios`.
 Desde esta carpeta, configura la conexión y arranca Spring Boot:
 
 ```powershell
-$env:DATABASE_URL = "jdbc:postgresql://localhost:5432/db"
+$env:DATABASE_URL = "jdbc:postgresql://localhost/db"
 $env:DATABASE_USERNAME = "user"
 $env:DATABASE_PASSWORD = "pass"
 mvn spring-boot:run
