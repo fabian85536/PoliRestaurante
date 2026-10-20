@@ -1,0 +1,30 @@
+$kind: http-request
+name: GET Meseros
+method: GET
+url: 'http://127.0.0.1:5000/api/meseros'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response is an array", function () {
+          const body = pm.response.json();
+          pm.expect(body).to.be.an("array");
+      });
+
+      pm.test("Each mesero has required fields", function () {
+          const body = pm.response.json();
+          body.forEach(function (mesero) {
+              pm.expect(mesero).to.have.property("id_mesero");
+              pm.expect(mesero).to.have.property("nombre");
+              pm.expect(mesero).to.have.property("usuario");
+          });
+      });
+
+      pm.test("Response time is under 1000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1000);
+      });
