@@ -1,0 +1,35 @@
+$kind: http-request
+name: PATCH Mesero por ID
+method: PATCH
+url: 'http://127.0.0.1:5000/api/meseros/{{id_mesero}}'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "María García Actualizada",
+      "usuario": "mgarcia2",
+      "contrasena": "clave789"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has updated fields", function () {
+          const body = pm.response.json();
+          pm.expect(body.id_mesero).to.eql(Number(pm.collectionVariables.get("id_mesero")));
+          pm.expect(body.nombre).to.eql("María García Actualizada");
+          pm.expect(body.usuario).to.eql("mgarcia2");
+          pm.expect(body).not.to.have.property("contrasena");
+      });
+
+      pm.test("Response time is under 1000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1000);
+      });

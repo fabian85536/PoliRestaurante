@@ -1,0 +1,20 @@
+$kind: http-request
+name: DELETE Mesero por ID
+method: DELETE
+url: 'http://127.0.0.1:5000/api/meseros/{{id_mesero}}'
+order: 5000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 204", function () {
+          pm.response.to.have.status(204);
+      });
+
+      pm.test("Response body is empty", function () {
+          pm.expect(pm.response.text()).to.be.empty;
+      });
+
+      pm.test("Response time is under 1000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1000);
+      });

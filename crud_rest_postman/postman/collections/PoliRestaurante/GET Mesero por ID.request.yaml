@@ -1,0 +1,23 @@
+$kind: http-request
+name: GET Mesero por ID
+method: GET
+url: 'http://127.0.0.1:5000/api/meseros/{{id_mesero}}'
+order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has required fields", function () {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("id_mesero");
+          pm.expect(body).to.have.property("nombre");
+          pm.expect(body).to.have.property("usuario");
+      });
+
+      pm.test("Response time is under 1000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1000);
+      });

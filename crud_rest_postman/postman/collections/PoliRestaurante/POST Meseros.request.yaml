@@ -8,25 +8,26 @@ body:
   type: json
   content: |-
     {
-      "nombre": "Juan Pérez",
-      "usuario": "jperez",
-      "contrasena": "segura123"
+      "nombre": "María García",
+      "usuario": "mgarcia",
+      "contrasena": "clave456"
     }
 scripts:
   - type: afterResponse
+    language: text/javascript
     code: |-
-      pm.test("Status code is 200", function () {
-          pm.response.to.have.status(200);
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
       });
 
-      pm.test("Response is an array and has required fields", function () {
+      pm.test("Response is the created mesero", function () {
           const jsonData = pm.response.json();
-          pm.expect(jsonData).to.be.an('array');
-          if (jsonData.length > 0) {
-              pm.expect(jsonData[0]).to.have.property('id_mesero');
-              pm.expect(jsonData[0]).to.have.property('nombre');
-              pm.expect(jsonData[0]).to.have.property('usuario');
-          }
+          pm.expect(jsonData).to.be.an('object');
+          pm.expect(jsonData.id_mesero).to.be.a('number');
+          pm.expect(jsonData).to.have.property('nombre');
+          pm.expect(jsonData).to.have.property('usuario');
+          pm.expect(jsonData).not.to.have.property('contrasena');
+          pm.collectionVariables.set('id_mesero', jsonData.id_mesero);
       });
 
       pm.test("Response time is under 1000ms", function () {

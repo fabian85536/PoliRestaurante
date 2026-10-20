@@ -105,6 +105,20 @@ class RestApiTests(unittest.TestCase):
             )["usuario"],
             "luis",
         )
+        updated_staff = self.client.patch(
+            f"/api/meseros/{staff_id}",
+            json={
+                "nombre": "María García Actualizada",
+                "usuario": "mgarcia2",
+                "contrasena": "clave789",
+            },
+        )
+        updated_staff_json = self.response_json(updated_staff)
+        self.assertEqual(updated_staff.status_code, 200)
+        self.assertEqual(updated_staff_json["id_mesero"], staff_id)
+        self.assertEqual(updated_staff_json["nombre"], "María García Actualizada")
+        self.assertEqual(updated_staff_json["usuario"], "mgarcia2")
+        self.assertNotIn("contrasena", updated_staff_json)
         self.assertEqual(
             self.client.patch(
                 f"/api/meseros/{staff_id}", json={"nombre": "Luis Pérez"}
