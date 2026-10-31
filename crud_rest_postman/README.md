@@ -15,7 +15,7 @@ python .\crud_rest_postman\app.py
 ```
 
 Configura las variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS` y `DB_NAME`
-en `proyecto_crud\.env`. Importa `proyecto_crud\mi_base_datos​.sql` si todavía
+en `proyecto_crud\.env`. Importa `proyecto_crud\mi_base_datos.sql` si todavía
 no has creado las tablas. El servidor escucha en `http://127.0.0.1:5000`.
 
 Este servidor integrado de Flask es para desarrollo local, no para producción.

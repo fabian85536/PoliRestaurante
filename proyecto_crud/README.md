@@ -10,7 +10,7 @@ la estructura de la base de datos.
 1. Instala las dependencias desde esta carpeta:
 
    ```powershell
-   python -m pip install -r requirements.txt
+   python -m pip install -r .\requirements.txt
    ```
 
 2. Copia `.env.example` como `.env` y completa los datos de conexión de tu
@@ -20,6 +20,9 @@ la estructura de la base de datos.
    ```powershell
    Copy-Item .env.example .env
    ```
+
+   Desde la raíz del repositorio, la plantilla está en
+   `proyecto_crud\.env.example`.
 
 3. Inicia el CRUD:
 
@@ -46,11 +49,11 @@ muestran al listar registros.
 Las pruebas usan una conexión simulada y no acceden al servidor MySQL:
 
 ```powershell
-python -m unittest -v test_database.py
+python -m unittest -v test_database
 ```
 
 Prueba también los productos y las cuatro entidades nuevas:
 
 ```powershell
-python -m unittest -v test_producto_dao.py test_entidades_dao.py
+python -m unittest -v test_producto_dao test_entidades_dao
 ```

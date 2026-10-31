@@ -1,7 +1,0 @@
-.env
-target/
-*.class
-.idea/
-.vscode/
-__pycache__/
-*.py[cod]

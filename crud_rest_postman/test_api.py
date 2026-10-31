@@ -13,16 +13,17 @@ class SQLiteDatabase:
     def __init__(self, database_path: Path):
         self.database_path = database_path
         self.engine = None
-        self.sesion = None
+        self.engine_creations = 0
+        self.sessions_created = 0
 
-    def conectar(self):
-        self.engine = create_engine(f"sqlite:///{self.database_path}")
-        self.sesion = Session(self.engine, expire_on_commit=False)
+    def nueva_sesion(self):
+        if self.engine is None:
+            self.engine = create_engine(f"sqlite:///{self.database_path}")
+            self.engine_creations += 1
+        self.sessions_created += 1
+        return Session(self.engine, expire_on_commit=False)
 
     def desconectar(self):
-        if self.sesion is not None:
-            self.sesion.close()
-            self.sesion = None
         if self.engine is not None:
             self.engine.dispose()
             self.engine = None
@@ -35,9 +36,8 @@ class RestApiTests(unittest.TestCase):
         engine = create_engine(f"sqlite:///{database_path}")
         Base.metadata.create_all(engine)
         engine.dispose()
-        self.app = create_app(
-            database_factory=lambda: SQLiteDatabase(database_path)
-        )
+        self.database = SQLiteDatabase(database_path)
+        self.app = create_app(database_factory=lambda: self.database)
         self.app.config.update(TESTING=True)
         self.client = self.app.test_client()
 
@@ -48,12 +48,24 @@ class RestApiTests(unittest.TestCase):
         return payload
 
     def tearDown(self):
+        self.database.desconectar()
         self.temp_dir.cleanup()
 
     def test_health_does_not_require_a_database(self):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, {"status": "ok"})
+
+    def test_requests_reuse_engine_and_create_a_session_per_request(self):
+        self.client.get("/api/usuarios")
+        self.client.post(
+            "/api/usuarios",
+            json={"nombre": "Ana", "email": "ana@example.com"},
+        )
+        self.client.get("/api/usuarios")
+
+        self.assertEqual(self.database.engine_creations, 1)
+        self.assertEqual(self.database.sessions_created, 3)
 
     def test_cors_allows_live_server_origins_and_json_preflight(self):
         for origin in (

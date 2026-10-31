@@ -1,4 +1,5 @@
 import logging
+from threading import Lock
 
 from sqlalchemy import URL, create_engine, text
 from sqlalchemy.engine import Engine
@@ -16,6 +17,7 @@ class Database:
     def __init__(self):
         self.engine: Engine | None = None
         self._sesion: Session | None = None
+        self._engine_lock = Lock()
 
     @property
     def sesion(self) -> Session:
@@ -23,22 +25,30 @@ class Database:
             raise RuntimeError("Primero debes llamar a conectar()")
         return self._sesion
 
+    def _obtener_engine(self) -> Engine:
+        with self._engine_lock:
+            if self.engine is None:
+                configuracion = obtener_configuracion_bd()
+                url = URL.create(
+                    drivername="mysql+mysqlconnector",
+                    username=configuracion["user"],
+                    password=configuracion["pass"],
+                    host=configuracion["host"],
+                    port=configuracion["port"],
+                    database=configuracion["database"],
+                )
+                self.engine = create_engine(url, pool_pre_ping=True)
+            return self.engine
+
+    def nueva_sesion(self) -> Session:
+        return Session(self._obtener_engine(), expire_on_commit=False)
+
     def conectar(self):
         try:
-            configuracion = obtener_configuracion_bd()
-            params = {
-                "drivername": "mysql+mysqlconnector",
-                "username": configuracion["user"],
-                "host": configuracion["host"],
-                "port": configuracion["port"],
-                "database": configuracion["database"],
-            }
-            params["pass" + "word"] = configuracion["pass"]
-            url = URL.create(**params)
-            self.engine = create_engine(url, pool_pre_ping=True)
-            with self.engine.connect() as conexion:
+            engine = self._obtener_engine()
+            with engine.connect() as conexion:
                 conexion.execute(text("SELECT 1"))
-            self._sesion = Session(self.engine, expire_on_commit=False)
+            self._sesion = Session(engine, expire_on_commit=False)
             logging.info("Conectado a BD")
         except Exception:
             self.desconectar()
@@ -54,4 +64,4 @@ class Database:
             self.engine.dispose()
             self.engine = None
         if habia_recursos:
-            logging.info("Sesi?n y conexiones a MySQL cerradas")
+            logging.info("Sesión y conexiones a MySQL cerradas")

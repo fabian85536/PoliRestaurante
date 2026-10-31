@@ -278,7 +278,7 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
         app,
         origins=["http://127.0.0.1:5500", "http://localhost:5500"],
     )
-    app.config["DATABASE_FACTORY"] = database_factory
+    app.extensions["database"] = database_factory()
 
     resources = {
         "usuarios": Resource(
@@ -328,20 +328,18 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
     def open_database():
         if request.path == "/health" or request.method == "OPTIONS":
             return None
-        database = app.config["DATABASE_FACTORY"]()
         try:
-            database.conectar()
+            g.sesion = app.extensions["database"].nueva_sesion()
         except ValueError as error:
             logging.error("Configuración inválida de la base de datos: %s", error)
             return jsonify(error="No se pudo configurar la conexión a la base de datos."), 500
-        g.database = database
         return None
 
     @app.teardown_request
     def close_database(_error):
-        database = getattr(g, "database", None)
-        if database is not None:
-            database.desconectar()
+        sesion = getattr(g, "sesion", None)
+        if sesion is not None:
+            sesion.close()
 
     @app.errorhandler(ValueError)
     def handle_bad_input(error):
@@ -365,7 +363,7 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
         resource = resources.get(entity)
         if resource is None:
             abort(404, description="Recurso no encontrado.")
-        dao = resource.dao_factory(g.database.sesion)
+        dao = resource.dao_factory(g.sesion)
         if request.method == "GET":
             records = resource.list_records(dao)
             return jsonify([resource.serialize(record) for record in records])
@@ -384,7 +382,7 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
         resource = resources.get(entity)
         if resource is None:
             abort(404, description="Recurso no encontrado.")
-        dao = resource.dao_factory(g.database.sesion)
+        dao = resource.dao_factory(g.sesion)
 
         if request.method == "GET":
             record = resource.find_record(dao, record_id)
@@ -407,4 +405,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000)
+    try:
+        app.run(host="127.0.0.1", port=5000)
+    finally:
+        app.extensions["database"].desconectar()

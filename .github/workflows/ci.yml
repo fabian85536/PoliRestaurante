@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install -r proyecto_crud/requirements.txt
+          python -m pip install -r crud_rest_postman/requirements.txt
+      - name: Test Python CRUD
+        working-directory: proyecto_crud
+        run: python -m unittest -v test_database test_producto_dao test_entidades_dao
+      - name: Test Flask API
+        working-directory: crud_rest_postman
+        run: python -m unittest discover -s . -p "test_*.py" -v
