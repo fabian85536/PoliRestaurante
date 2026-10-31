@@ -55,6 +55,40 @@ class RestApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, {"status": "ok"})
 
+    def test_cors_allows_live_server_origins_and_json_preflight(self):
+        for origin in (
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+        ):
+            response = self.client.get("/health", headers={"Origin": origin})
+            self.assertEqual(
+                response.headers.get("Access-Control-Allow-Origin"), origin
+            )
+
+        preflight = self.client.options(
+            "/api/usuarios",
+            headers={
+                "Origin": "http://127.0.0.1:5500",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
+        self.assertEqual(preflight.status_code, 200)
+        self.assertEqual(
+            preflight.headers.get("Access-Control-Allow-Origin"),
+            "http://127.0.0.1:5500",
+        )
+        self.assertIn(
+            "content-type",
+            preflight.headers.get("Access-Control-Allow-Headers", "").lower(),
+        )
+
+    def test_cors_does_not_allow_unconfigured_origins(self):
+        response = self.client.get(
+            "/health", headers={"Origin": "http://example.com"}
+        )
+        self.assertNotIn("Access-Control-Allow-Origin", response.headers)
+
     def test_user_crud_and_passwords_are_not_returned(self):
         created = self.client.post(
             "/api/usuarios",

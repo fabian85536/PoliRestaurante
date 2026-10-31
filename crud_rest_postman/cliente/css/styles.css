@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  --brand: #7b2d26;
+  --brand-dark: #55201c;
+}
+
+body {
+  background: #f5f4f1;
+}
+
+header {
+  color: #fff;
+  background: linear-gradient(120deg, var(--brand-dark), var(--brand));
+}
+
+.eyebrow {
+  color: #f3c9a8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--brand);
+  --bs-btn-border-color: var(--brand);
+  --bs-btn-hover-bg: var(--brand-dark);
+  --bs-btn-hover-border-color: var(--brand-dark);
+  --bs-btn-active-bg: var(--brand-dark);
+  --bs-btn-active-border-color: var(--brand-dark);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--brand);
+  --bs-btn-border-color: var(--brand);
+  --bs-btn-hover-bg: var(--brand);
+  --bs-btn-hover-border-color: var(--brand);
+}
+
+code {
+  color: var(--brand);
+}

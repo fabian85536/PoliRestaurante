@@ -1,8 +1,9 @@
-# CRUD REST para PoliRestaurante
+# CRUD REST y cliente web para PoliRestaurante
 
 Servicio REST en Flask para consumir desde Postman. Reutiliza los modelos,
 validaciones, DAO y conexión MySQL de `proyecto_crud`; no crea ni modifica el
-esquema de la base de datos.
+esquema de la base de datos. Incluye también un cliente web en HTML, Bootstrap
+y JavaScript que permite administrar sus siete recursos desde Live Server.
 
 ## Preparar y ejecutar
 
@@ -18,6 +19,41 @@ en `proyecto_crud\.env`. Importa `proyecto_crud\mi_base_datos​.sql` si todaví
 no has creado las tablas. El servidor escucha en `http://127.0.0.1:5000`.
 
 Este servidor integrado de Flask es para desarrollo local, no para producción.
+
+## Cliente web con Live Server
+
+1. Instala las dependencias desde la raíz del repositorio:
+
+   ```powershell
+   python -m pip install -r .\crud_rest_postman\requirements.txt
+   ```
+
+2. Configura `proyecto_crud\.env` e inicia la API desde la raíz:
+
+   ```powershell
+   python .\crud_rest_postman\app.py
+   ```
+
+3. Abre la carpeta del repositorio en VS Code y sobre
+   `crud_rest_postman\cliente\cliente.html` selecciona **Open with Live Server**.
+   Por defecto el cliente estará en `http://127.0.0.1:5500`.
+
+La API permite CORS únicamente desde `http://127.0.0.1:5500` y
+`http://localhost:5500`, los orígenes locales predeterminados de Live Server.
+El cliente administra usuarios, productos, meseros, administradores, personal
+de cocina, mesas y pedidos. Para relaciones entre registros (por ejemplo,
+`id_mesa` o `id_mesero`) se escriben los identificadores existentes.
+Bootstrap se carga desde su CDN, por lo que la interfaz requiere conexión a
+Internet para los estilos.
+
+Extensiones recomendadas para VS Code:
+
+- **Live Server** (Ritwick Dey), para servir el HTML y recargarlo al guardar.
+- **Prettier**, para formatear HTML, CSS y JavaScript.
+- **HTML CSS Support**, para autocompletar clases CSS y Bootstrap.
+
+No abras el HTML con doble clic (`file://`): el navegador bloquea los módulos
+JavaScript y las solicitudes al backend en ese modo.
 
 ## Ejemplos didácticos en memoria
 

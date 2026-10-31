@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from flask import Flask, abort, g, jsonify, request
+from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -273,6 +274,10 @@ def _update_order(dao: PedidoDAO, order_id: int, payload: dict) -> bool:
 
 def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
     app = Flask(__name__)
+    CORS(
+        app,
+        origins=["http://127.0.0.1:5500", "http://localhost:5500"],
+    )
     app.config["DATABASE_FACTORY"] = database_factory
 
     resources = {
@@ -321,7 +326,7 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
 
     @app.before_request
     def open_database():
-        if request.path == "/health":
+        if request.path == "/health" or request.method == "OPTIONS":
             return None
         database = app.config["DATABASE_FACTORY"]()
         try:
