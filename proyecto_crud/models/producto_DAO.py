@@ -65,7 +65,7 @@ class ProductoDAO:
     def obtener_por_id(self, id_producto):
         consulta = select(Producto).where(Producto.id_producto == id_producto)
         return self.sesion.scalar(consulta)
-
+    # Comprueba que los IDs de categoría y administrador existan antes de guardar.
     def _validar_referencias(self, id_categoria, id_administrador):
         if (
             id_categoria is not None
