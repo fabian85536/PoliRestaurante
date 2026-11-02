@@ -47,7 +47,7 @@ class Producto(Base):
     @disponible.setter
     def disponible(self, valor):
         self.disponibilidad = "Disponible" if valor else "No disponible"
-
+    # Limpia los textos y revisa que el nombre no esté vacío y el precio sea mayor que cero.
     def validar(self):
         self.nombre = self.nombre.strip()
         self.descripcion = (self.descripcion or "").strip()
