@@ -13,7 +13,7 @@ from validation import validar_email
 class UsuarioDAO:
     def __init__(self, sesion: Session):
         self.sesion = sesion
-
+    # Crea un usuario nuevo: valida el correo, lo guarda y devuelve su id.
     def crear_usuario(self, nombre, email):
         if not validar_email(email):
             raise ValueError("Email inválido")
