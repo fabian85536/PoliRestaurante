@@ -36,7 +36,8 @@ class UsuarioDAO:
     def obtener_por_email(self, email):
         consulta = select(Usuario).where(Usuario.email == email)
         return self.sesion.scalar(consulta)
-
+    # Busca un usuario por su email.
+    # Cambia el nombre del usuario que tiene ese email.
     def actualizar(self, email, nuevo_nombre):
         try:
             usuario = self.obtener_por_email(email)
