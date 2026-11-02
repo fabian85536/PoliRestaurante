@@ -83,7 +83,7 @@ class ProductoDAO:
                 f"No existe el administrador con ID {id_administrador}. "
                 "Elige un administrador registrado o deja el campo vacío."
             )
-
+    # Modifica solo los campos que lleguen. Devuelve False si el producto no existe.
     def actualizar(
         self,
         id_producto,
