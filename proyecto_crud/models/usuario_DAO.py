@@ -50,7 +50,8 @@ class UsuarioDAO:
             self.sesion.rollback()
             logging.exception("Error al actualizar usuario")
             raise
-
+    # Elimina el usuario con ese email. Devuelve True si lo borró
+    # y False si no existe.
     def eliminar(self, email):
         try:
             usuario = self.obtener_por_email(email)
