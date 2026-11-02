@@ -39,10 +39,10 @@ class Database:
                 )
                 self.engine = create_engine(url, pool_pre_ping=True)
             return self.engine
-
+    # Crea una sesión nueva de SQLAlchemy para cada petición.
     def nueva_sesion(self) -> Session:
         return Session(self._obtener_engine(), expire_on_commit=False)
-
+    # Prueba la conexión a MySQL con un SELECT 1 antes de usarla.
     def conectar(self):
         try:
             engine = self._obtener_engine()
