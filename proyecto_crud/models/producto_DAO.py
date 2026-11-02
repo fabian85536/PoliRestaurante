@@ -10,7 +10,7 @@ from models.Producto import Administrador, Categoria, Producto
 class ProductoDAO:
     def __init__(self, sesion: Session):
         self.sesion = sesion
-
+    # Valida que la categoría y el administrador existan, crea el producto y devuelve su id.
     def crear_producto(
         self,
         nombre,
