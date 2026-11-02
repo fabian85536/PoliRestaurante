@@ -328,6 +328,173 @@ class RestApiTests(unittest.TestCase):
             204,
         )
 
+    def test_home_delivery_and_order_detail_crud(self):
+        order = self.client.post(
+            "/api/pedidos", json={"tipo_pedido": "Domicilio"}
+        )
+        self.assertEqual(order.status_code, 201)
+        order_id = self.response_json(order)["id_pedido"]
+        product = self.client.post(
+            "/api/productos",
+            json={"nombre": "Jugo", "precio": 5000},
+        )
+        self.assertEqual(product.status_code, 201)
+        product_id = self.response_json(product)["id"]
+
+        delivery = self.client.post(
+            "/api/domicilios",
+            json={
+                "id_pedido": order_id,
+                "direccion": "Calle 1",
+                "telefono": "3001234567",
+                "costo_envio": 5000,
+            },
+        )
+        self.assertEqual(delivery.status_code, 201)
+        delivery_id = self.response_json(delivery)["id_domicilio"]
+        self.assertEqual(self.client.get("/api/domicilios").status_code, 200)
+        self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/domicilios/{delivery_id}")
+            )["direccion"],
+            "Calle 1",
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/domicilios",
+                json={"id_pedido": order_id},
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.patch(
+                f"/api/domicilios/{delivery_id}",
+                json={"direccion": "Carrera 2"},
+            ).status_code,
+            200,
+        )
+
+        detail = self.client.post(
+            "/api/detalles_pedido",
+            json={
+                "id_pedido": order_id,
+                "id_producto": product_id,
+                "cantidad": 2,
+                "precio_unitario": 5000,
+                "notas": "Sin hielo",
+            },
+        )
+        self.assertEqual(detail.status_code, 201)
+        detail_id = self.response_json(detail)["id_detalle"]
+        self.assertEqual(
+            self.client.get("/api/detalles_pedido").status_code, 200
+        )
+        self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/detalles_pedido/{detail_id}")
+            )["notas"],
+            "Sin hielo",
+        )
+        self.assertEqual(
+            self.client.patch(
+                f"/api/detalles_pedido/{detail_id}",
+                json={"cantidad": 3},
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/detalles_pedido",
+                json={"id_pedido": order_id, "id_producto": 999},
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.delete(f"/api/detalles_pedido/{detail_id}").status_code,
+            204,
+        )
+        self.assertEqual(
+            self.client.delete(f"/api/domicilios/{delivery_id}").status_code,
+            204,
+        )
+
+    def test_create_order_with_details_uses_both_daos_atomically(self):
+        product = self.client.post(
+            "/api/productos",
+            json={"nombre": "Jugo", "precio": 5000},
+        )
+        self.assertEqual(product.status_code, 201)
+        product_id = self.response_json(product)["id"]
+
+        created = self.client.post(
+            "/api/pedidos/con-detalles",
+            json={
+                "pedido": {
+                    "tipo_pedido": "Mesa",
+                    "nombre_cliente": "Ana",
+                    "total": 10000,
+                },
+                "detalles": [
+                    {
+                        "id_producto": product_id,
+                        "cantidad": 2,
+                        "precio_unitario": 5000,
+                    },
+                    {
+                        "id_producto": product_id,
+                        "cantidad": 1,
+                        "precio_unitario": 5000,
+                        "notas": "Sin hielo",
+                    },
+                ],
+            },
+        )
+        self.assertEqual(created.status_code, 201)
+        response = self.response_json(created)
+        self.assertEqual(response["pedido"]["nombre_cliente"], "Ana")
+        self.assertEqual(len(response["detalles"]), 2)
+        order_id = response["pedido"]["id_pedido"]
+        self.assertEqual(
+            self.client.get(f"/api/pedidos/{order_id}").status_code, 200
+        )
+        self.assertEqual(
+            len(
+                [
+                    detalle
+                    for detalle in self.client.get(
+                        "/api/detalles_pedido"
+                    ).json
+                    if detalle["id_pedido"] == order_id
+                ]
+            ),
+            2,
+        )
+
+        rejected = self.client.post(
+            "/api/pedidos/con-detalles",
+            json={
+                "pedido": {"tipo_pedido": "Domicilio"},
+                "detalles": [
+                    {
+                        "id_producto": product_id,
+                        "cantidad": 0,
+                        "precio_unitario": 5000,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(rejected.status_code, 400)
+        self.assertEqual(
+            len(
+                [
+                    pedido
+                    for pedido in self.client.get("/api/pedidos").json
+                    if pedido["tipo_pedido"] == "Domicilio"
+                ]
+            ),
+            0,
+        )
+
     def test_invalid_payload_and_unknown_resource(self):
         invalid = self.client.post(
             "/api/usuarios", json={"nombre": "Ana"}

@@ -4,6 +4,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from database import Database
 from models.administrador_DAO import AdministradorDAO
+from models.detalle_pedido_DAO import DetallePedidoDAO
+from models.domicilio_DAO import DomicilioDAO
 from models.mesa_DAO import MesaDAO
 from models.mesero_DAO import MeseroDAO
 from models.pedido_DAO import PedidoDAO
@@ -12,10 +14,13 @@ from models.producto_DAO import ProductoDAO
 from models.usuario_DAO import UsuarioDAO
 from ui.entidades_menu import (
     ADMINISTRADOR_CAMPOS,
+    DETALLE_PEDIDO_CAMPOS,
+    DOMICILIO_CAMPOS,
     MESA_CAMPOS,
     MESERO_CAMPOS,
     PEDIDO_CAMPOS,
     PERSONAL_COCINA_CAMPOS,
+    crear_pedido_con_detalles_interactivo,
     ejecutar_menu_entidad,
 )
 from ui.menu import (
@@ -56,6 +61,8 @@ try:
     mesa_dao = MesaDAO(db.sesion)
     pedido_dao = PedidoDAO(db.sesion)
     personal_cocina_dao = PersonalCocinaDAO(db.sesion)
+    domicilio_dao = DomicilioDAO(db.sesion)
+    detalle_pedido_dao = DetallePedidoDAO(db.sesion)
     while True:
         opcion = mostrar_menu()
         if opcion == "1":
@@ -261,6 +268,28 @@ try:
                 PERSONAL_COCINA_CAMPOS,
                 personal_cocina_dao.crear_personal_cocina,
                 personal_cocina_dao.obtener_personal_cocina,
+            )
+        elif opcion == "17":
+            ejecutar_menu_entidad(
+                domicilio_dao,
+                "Domicilio",
+                "Domicilios",
+                DOMICILIO_CAMPOS,
+                domicilio_dao.crear_domicilio,
+                domicilio_dao.obtener_domicilios,
+            )
+        elif opcion == "18":
+            ejecutar_menu_entidad(
+                detalle_pedido_dao,
+                "Detalle de pedido",
+                "Detalles de pedido",
+                DETALLE_PEDIDO_CAMPOS,
+                detalle_pedido_dao.crear_detalle,
+                detalle_pedido_dao.obtener_detalles,
+            )
+        elif opcion == "19":
+            crear_pedido_con_detalles_interactivo(
+                pedido_dao, detalle_pedido_dao
             )
         else:
             print("Opción inválida")

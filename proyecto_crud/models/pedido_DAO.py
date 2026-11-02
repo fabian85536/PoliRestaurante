@@ -35,15 +35,20 @@ class PedidoDAO:
     def __init__(self, sesion: Session):
         self.sesion = sesion
 
+    def agregar_pedido(self, **datos):
+        self._validar_datos(datos)
+        pedido = Pedido(**datos)
+        pedido.validar()
+        self.sesion.add(pedido)
+        self.sesion.flush()
+        return pedido.id_pedido
+
     def crear_pedido(self, **datos):
         try:
-            self._validar_datos(datos)
-            pedido = Pedido(**datos)
-            pedido.validar()
-            self.sesion.add(pedido)
+            pedido_id = self.agregar_pedido(**datos)
             self.sesion.commit()
-            logging.info("Pedido creado: %s", pedido.id_pedido)
-            return pedido.id_pedido
+            logging.info("Pedido creado: %s", pedido_id)
+            return pedido_id
         except ValueError:
             self.sesion.rollback()
             raise

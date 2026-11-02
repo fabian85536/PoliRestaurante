@@ -35,14 +35,15 @@ No compartas ni subas el archivo `.env`; contiene las credenciales de acceso.
 ## Tablas usadas por el CRUD
 
 Importa `mi_base_datos.sql` en tu servidor MySQL para crear el esquema esperado.
-Las operaciones nuevas usan las tablas `Mesero`, `Administrador`, `Mesa` y
-`Pedido`, incluyendo las referencias a meseros, personal de cocina,
-administradores y mesas ya definidas en el SQL del proyecto. El CRUD no crea
-automáticamente la base ni las tablas.
+El script incluye `Domicilio` y `DetallePedido`; sus modelos y DAO permiten
+crear, listar, buscar, actualizar y eliminar registros desde el menú de
+consola. El CRUD no crea automáticamente la base ni las tablas.
 
 En el menú principal, las opciones 12 a 16 abren los CRUD de meseros,
-administradores, mesas, pedidos y personal de cocina. Las contraseñas no se
-muestran al listar registros.
+administradores, mesas, pedidos y personal de cocina; las opciones 17 y 18
+gestionan domicilios y detalles de pedido. La opción 19 crea un pedido junto
+con sus detalles, usando ambos DAO dentro de una sola transacción. Las
+contraseñas no se muestran al listar registros.
 
 ## Pruebas
 

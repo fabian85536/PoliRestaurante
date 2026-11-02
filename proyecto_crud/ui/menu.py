@@ -21,6 +21,9 @@ def mostrar_menu():
     print("14. CRUD de mesas")
     print("15. CRUD de pedidos")
     print("16. CRUD de personal de cocina")
+    print("17. CRUD de domicilios")
+    print("18. CRUD de detalles de pedido")
+    print("19. Crear pedido con sus detalles")
     return input("Opción: ")
 
 

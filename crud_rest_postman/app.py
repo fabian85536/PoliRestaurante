@@ -15,6 +15,8 @@ if str(PROJECT_CRUD_DIR) not in sys.path:
 
 from database import Database
 from models.administrador_DAO import AdministradorDAO
+from models.detalle_pedido_DAO import DetallePedidoDAO
+from models.domicilio_DAO import DomicilioDAO
 from models.mesa_DAO import MesaDAO
 from models.mesero_DAO import MeseroDAO
 from models.pedido_DAO import PedidoDAO
@@ -22,6 +24,7 @@ from models.personal_cocina_DAO import PersonalCocinaDAO
 from models.producto_DAO import ProductoDAO
 from models.usuario import Usuario
 from models.usuario_DAO import UsuarioDAO
+from services.pedido_service import crear_pedido_con_detalles
 
 
 @dataclass(frozen=True)
@@ -272,6 +275,108 @@ def _update_order(dao: PedidoDAO, order_id: int, payload: dict) -> bool:
     return dao.actualizar(order_id, **data)
 
 
+def _create_home_delivery(dao: DomicilioDAO, payload: dict) -> int:
+    fields = {"id_pedido", "direccion", "telefono", "costo_envio"}
+    _required_fields(payload, fields)
+    data = dict(payload)
+    for field in ("id_pedido", "costo_envio"):
+        if field in data:
+            data[field] = _integer(data[field], field, nullable=True)
+    for field in ("direccion", "telefono"):
+        if field in data:
+            data[field] = _string(data, field)
+    return dao.crear_domicilio(**data)
+
+
+def _update_home_delivery(
+    dao: DomicilioDAO, delivery_id: int, payload: dict
+) -> bool:
+    fields = {"id_pedido", "direccion", "telefono", "costo_envio"}
+    _required_fields(payload, fields)
+    if not payload:
+        raise ValueError("Incluye al menos un campo para actualizar.")
+    data = dict(payload)
+    for field in ("id_pedido", "costo_envio"):
+        if field in data:
+            data[field] = _integer(data[field], field, nullable=True)
+    for field in ("direccion", "telefono"):
+        if field in data:
+            data[field] = _string(data, field)
+    return dao.actualizar(delivery_id, **data)
+
+
+def _create_order_detail(dao: DetallePedidoDAO, payload: dict) -> int:
+    fields = {"id_pedido", "id_producto", "cantidad", "precio_unitario", "notas"}
+    _required_fields(payload, fields)
+    data = dict(payload)
+    for field in ("id_pedido", "id_producto", "cantidad", "precio_unitario"):
+        if field in data:
+            data[field] = _integer(data[field], field, nullable=True)
+    if "notas" in data:
+        data["notas"] = _string(data, "notas")
+    return dao.crear_detalle(**data)
+
+
+def _update_order_detail(
+    dao: DetallePedidoDAO, detail_id: int, payload: dict
+) -> bool:
+    fields = {"id_pedido", "id_producto", "cantidad", "precio_unitario", "notas"}
+    _required_fields(payload, fields)
+    if not payload:
+        raise ValueError("Incluye al menos un campo para actualizar.")
+    data = dict(payload)
+    for field in ("id_pedido", "id_producto", "cantidad", "precio_unitario"):
+        if field in data:
+            data[field] = _integer(data[field], field, nullable=True)
+    if "notas" in data:
+        data["notas"] = _string(data, "notas")
+    return dao.actualizar(detail_id, **data)
+
+
+def _create_complete_order(payload: dict) -> int:
+    _validate_fields(payload, {"pedido", "detalles"}, {"pedido", "detalles"})
+    order_data = payload["pedido"]
+    details_data = payload["detalles"]
+    if not isinstance(order_data, dict):
+        raise ValueError("'pedido' debe ser un objeto JSON.")
+    if not isinstance(details_data, list) or not details_data:
+        raise ValueError("Incluye al menos un detalle de pedido.")
+
+    pedido_dao = PedidoDAO(g.sesion)
+    _required_fields(order_data, pedido_dao.CAMPOS)
+    normalized_order = dict(order_data)
+    for field in pedido_dao.CAMPOS:
+        if field.startswith("id_") or field == "total":
+            if field in normalized_order:
+                normalized_order[field] = _integer(
+                    normalized_order[field], field, nullable=True
+                )
+        elif field in normalized_order:
+            normalized_order[field] = _string(normalized_order, field)
+
+    normalized_details = []
+    detail_fields = {"id_producto", "cantidad", "precio_unitario", "notas"}
+    for detail in details_data:
+        if not isinstance(detail, dict):
+            raise ValueError("Cada detalle debe ser un objeto JSON.")
+        _validate_fields(
+            detail,
+            detail_fields,
+            {"id_producto", "cantidad", "precio_unitario"},
+        )
+        data = dict(detail)
+        for field in ("id_producto", "cantidad", "precio_unitario"):
+            data[field] = _integer(data[field], field)
+        if "notas" in data:
+            data["notas"] = _string(data, "notas")
+        normalized_details.append(data)
+
+    detalle_dao = DetallePedidoDAO(g.sesion)
+    return crear_pedido_con_detalles(
+        pedido_dao, detalle_dao, normalized_order, normalized_details
+    )
+
+
 def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
     app = Flask(__name__)
     CORS(
@@ -322,6 +427,24 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
             update=_update_order,
             delete=lambda dao, record_id: dao.eliminar(record_id),
         ),
+        "domicilios": Resource(
+            dao_factory=DomicilioDAO,
+            list_records=lambda dao: dao.obtener_domicilios(),
+            find_record=lambda dao, record_id: dao.obtener_por_id(record_id),
+            serialize=lambda record: record.to_dict(),
+            create=_create_home_delivery,
+            update=_update_home_delivery,
+            delete=lambda dao, record_id: dao.eliminar(record_id),
+        ),
+        "detalles_pedido": Resource(
+            dao_factory=DetallePedidoDAO,
+            list_records=lambda dao: dao.obtener_detalles(),
+            find_record=lambda dao, record_id: dao.obtener_por_id(record_id),
+            serialize=lambda record: record.to_dict(),
+            create=_create_order_detail,
+            update=_update_order_detail,
+            delete=lambda dao, record_id: dao.eliminar(record_id),
+        ),
     }
 
     @app.before_request
@@ -357,6 +480,29 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
     @app.get("/health")
     def health():
         return jsonify(status="ok")
+
+    @app.post("/api/pedidos/con-detalles")
+    def create_complete_order():
+        pedido_id = _create_complete_order(_object_payload())
+        pedido = resources["pedidos"].find_record(
+            PedidoDAO(g.sesion), pedido_id
+        )
+        detalles = [
+            detalle
+            for detalle in resources["detalles_pedido"].list_records(
+                DetallePedidoDAO(g.sesion)
+            )
+            if detalle.id_pedido == pedido_id
+        ]
+        return jsonify(
+            {
+                "pedido": resources["pedidos"].serialize(pedido),
+                "detalles": [
+                    resources["detalles_pedido"].serialize(detalle)
+                    for detalle in detalles
+                ],
+            }
+        ), 201
 
     @app.route("/api/<entity>", methods=["GET", "POST"])
     def collection(entity):

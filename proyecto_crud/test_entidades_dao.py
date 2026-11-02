@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from models.administrador import Administrador
 from models.administrador_DAO import AdministradorDAO
+from models.detalle_pedido_DAO import DetallePedidoDAO
+from models.domicilio_DAO import DomicilioDAO
 from models.mesa import Mesa
 from models.mesa_DAO import MesaDAO
 from models.mesero import Mesero
@@ -13,6 +15,7 @@ from models.pedido import Pedido
 from models.pedido_DAO import PedidoDAO
 from models.personal_cocina import PersonalCocina
 from models.personal_cocina_DAO import PersonalCocinaDAO
+from models.producto_DAO import ProductoDAO
 from models.usuario import Base
 
 
@@ -26,6 +29,9 @@ class TestEntidadesDAO(unittest.TestCase):
         self.mesa_dao = MesaDAO(self.sesion)
         self.pedido_dao = PedidoDAO(self.sesion)
         self.personal_cocina_dao = PersonalCocinaDAO(self.sesion)
+        self.domicilio_dao = DomicilioDAO(self.sesion)
+        self.detalle_pedido_dao = DetallePedidoDAO(self.sesion)
+        self.producto_dao = ProductoDAO(self.sesion)
 
     def tearDown(self):
         self.sesion.close()
@@ -147,6 +153,56 @@ class TestEntidadesDAO(unittest.TestCase):
             self.pedido_dao.crear_pedido(total=-1)
         self.assertTrue(self.pedido_dao.eliminar(pedido_id))
         self.assertIsNone(self.pedido_dao.obtener_por_id(pedido_id))
+
+    def test_domicilio_crud_y_valida_pedido_unico(self):
+        pedido_id = self.pedido_dao.crear_pedido(tipo_pedido="Domicilio")
+        domicilio_id = self.domicilio_dao.crear_domicilio(
+            pedido_id, " Calle 1 ", " 3001234567 ", 5000
+        )
+
+        domicilio = self.domicilio_dao.obtener_por_id(domicilio_id)
+        self.assertEqual(domicilio.direccion, "Calle 1")
+        self.assertEqual(domicilio.telefono, "3001234567")
+        self.assertEqual(len(self.domicilio_dao.obtener_domicilios()), 1)
+        with self.assertRaisesRegex(ValueError, "ya tiene un domicilio"):
+            self.domicilio_dao.crear_domicilio(pedido_id, "Calle 2", "300", 0)
+        with self.assertRaisesRegex(ValueError, "No existe el pedido"):
+            self.domicilio_dao.crear_domicilio(99, "Calle 3", "300", 0)
+        with self.assertRaisesRegex(ValueError, "no puede ser negativo"):
+            self.domicilio_dao.crear_domicilio(
+                direccion="Calle 4", costo_envio=-1
+            )
+        self.assertTrue(
+            self.domicilio_dao.actualizar(domicilio_id, direccion="Calle 10")
+        )
+        self.assertEqual(
+            self.domicilio_dao.obtener_por_id(domicilio_id).direccion, "Calle 10"
+        )
+        self.assertTrue(self.domicilio_dao.eliminar(domicilio_id))
+
+    def test_detalle_pedido_crud_y_valida_referencias_y_cantidades(self):
+        pedido_id = self.pedido_dao.crear_pedido(tipo_pedido="Mesa")
+        producto_id = self.producto_dao.crear_producto("Jugo", "", 5000)
+        detalle_id = self.detalle_pedido_dao.crear_detalle(
+            pedido_id, producto_id, 2, 5000, " Sin hielo "
+        )
+
+        detalle = self.detalle_pedido_dao.obtener_por_id(detalle_id)
+        self.assertEqual(detalle.notas, "Sin hielo")
+        self.assertEqual(len(self.detalle_pedido_dao.obtener_detalles()), 1)
+        with self.assertRaisesRegex(ValueError, "No existe el producto"):
+            self.detalle_pedido_dao.crear_detalle(pedido_id, 99, 1, 1000)
+        with self.assertRaisesRegex(ValueError, "cantidad debe ser positiva"):
+            self.detalle_pedido_dao.crear_detalle(
+                pedido_id, producto_id, 0, 1000
+            )
+        self.assertTrue(
+            self.detalle_pedido_dao.actualizar(detalle_id, cantidad=3)
+        )
+        self.assertEqual(
+            self.detalle_pedido_dao.obtener_por_id(detalle_id).cantidad, 3
+        )
+        self.assertTrue(self.detalle_pedido_dao.eliminar(detalle_id))
 
 
 if __name__ == "__main__":

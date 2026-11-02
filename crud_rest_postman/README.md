@@ -3,7 +3,7 @@
 Servicio REST en Flask para consumir desde Postman. Reutiliza los modelos,
 validaciones, DAO y conexión MySQL de `proyecto_crud`; no crea ni modifica el
 esquema de la base de datos. Incluye también un cliente web en HTML, Bootstrap
-y JavaScript que permite administrar sus siete recursos desde Live Server.
+y JavaScript que permite administrar sus nueve recursos desde Live Server.
 
 ## Preparar y ejecutar
 
@@ -41,8 +41,9 @@ Este servidor integrado de Flask es para desarrollo local, no para producción.
 La API permite CORS únicamente desde `http://127.0.0.1:5500` y
 `http://localhost:5500`, los orígenes locales predeterminados de Live Server.
 El cliente administra usuarios, productos, meseros, administradores, personal
-de cocina, mesas y pedidos. Para relaciones entre registros (por ejemplo,
-`id_mesa` o `id_mesero`) se escriben los identificadores existentes.
+de cocina, mesas, pedidos, domicilios y detalles de pedido. Para relaciones
+entre registros (por ejemplo, `id_mesa` o `id_mesero`) se escriben los
+identificadores existentes.
 Bootstrap se carga desde su CDN, por lo que la interfaz requiere conexión a
 Internet para los estilos.
 
@@ -91,6 +92,12 @@ parcialmente y `DELETE /<id>` para eliminar:
 | Personal de cocina | `/api/personal_cocina` | `id_cocina` |
 | Mesas | `/api/mesas` | `id_mesa` |
 | Pedidos | `/api/pedidos` | `id_pedido` |
+| Domicilios | `/api/domicilios` | `id_domicilio` |
+| Detalles de pedido | `/api/detalles_pedido` | `id_detalle` |
+
+Para crear un pedido con sus productos en una sola transacción, envía
+`POST /api/pedidos/con-detalles` con un objeto `pedido` y una lista no vacía
+`detalles`. Si falla un detalle, también se revierte la creación del pedido.
 
 La ruta `GET /health` comprueba que el servicio está activo. Las respuestas de
 creación usan HTTP 201 y contienen el registro; las actualizaciones devuelven

@@ -10,10 +10,16 @@ const mensaje = document.querySelector("#mensaje");
 const botonGuardar = document.querySelector("#btn-guardar");
 const botonCancelar = document.querySelector("#btn-cancelar");
 const botonRecargar = document.querySelector("#btn-recargar");
+const formularioPedidoCompleto = document.querySelector(
+  "#formulario-pedido-completo",
+);
+const filasDetalles = document.querySelector("#filas-detalles");
+const botonAgregarDetalle = document.querySelector("#btn-agregar-detalle");
 
 let registros = [];
 let registroEditado = null;
 let temporizadorMensaje;
+let secuenciaDetalle = 0;
 
 function recursoActual() {
   return RECURSOS[recursoSelect.value];
@@ -133,6 +139,69 @@ function crearBoton(texto, clases, accion) {
   boton.textContent = texto;
   boton.addEventListener("click", accion);
   return boton;
+}
+
+function actualizarBotonesEliminarDetalle() {
+  const botones = filasDetalles.querySelectorAll("[data-eliminar-detalle]");
+  for (const boton of botones) {
+    boton.disabled = botones.length === 1;
+  }
+}
+
+function agregarFilaDetalle() {
+  const numeroFila = secuenciaDetalle;
+  secuenciaDetalle += 1;
+  const fila = document.createElement("div");
+  fila.className = "row g-3 align-items-end border rounded p-3 mx-0";
+  const campos = [
+    { name: "id_producto", label: "ID del producto", type: "number", min: "1" },
+    { name: "cantidad", label: "Cantidad", type: "number", min: "1" },
+    {
+      name: "precio_unitario",
+      label: "Precio unitario",
+      type: "number",
+      min: "0",
+    },
+    { name: "notas", label: "Notas", type: "text" },
+  ];
+
+  for (const campo of campos) {
+    const columna = document.createElement("div");
+    columna.className =
+      campo.name === "notas" ? "col-12 col-lg-3" : "col-6 col-lg-2";
+    const etiqueta = document.createElement("label");
+    etiqueta.className = "form-label";
+    etiqueta.textContent = campo.label;
+    const input = document.createElement("input");
+    input.className = "form-control";
+    input.name = campo.name;
+    input.type = campo.type;
+    input.required = campo.type === "number";
+    if (campo.min !== undefined) {
+      input.min = campo.min;
+      input.step = "1";
+    }
+    etiqueta.htmlFor = `detalle-${campo.name}-${numeroFila}`;
+    input.id = etiqueta.htmlFor;
+    columna.append(etiqueta, input);
+    fila.append(columna);
+  }
+
+  const columnaAccion = document.createElement("div");
+  columnaAccion.className = "col-12 col-lg-2";
+  const eliminar = crearBoton(
+    "Quitar",
+    "btn btn-outline-danger w-100",
+    () => {
+      fila.remove();
+      actualizarBotonesEliminarDetalle();
+    },
+  );
+  eliminar.dataset.eliminarDetalle = "";
+  columnaAccion.append(eliminar);
+  fila.append(columnaAccion);
+  filasDetalles.append(fila);
+  actualizarBotonesEliminarDetalle();
 }
 
 function dibujarFormulario(registro = null) {
@@ -281,6 +350,64 @@ recursoSelect.addEventListener("change", () => {
 });
 botonRecargar.addEventListener("click", cargarRegistros);
 botonCancelar.addEventListener("click", cancelarEdicion);
+botonAgregarDetalle.addEventListener("click", agregarFilaDetalle);
+
+formularioPedidoCompleto.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const datos = new FormData(formularioPedidoCompleto);
+  const pedido = {};
+  for (const campo of ["tipo_pedido", "nombre_cliente", "estado"]) {
+    const valor = String(datos.get(campo) ?? "").trim();
+    if (valor) {
+      pedido[campo] = valor;
+    }
+  }
+  const total = String(datos.get("total") ?? "").trim();
+  if (total) {
+    pedido.total = Number(total);
+  }
+  const detalles = [...filasDetalles.children].map((fila) => {
+    const campos = Object.fromEntries(
+      [...fila.querySelectorAll("input")].map((input) => [
+        input.name,
+        input.value,
+      ]),
+    );
+    const detalle = {
+      id_producto: Number(campos.get("id_producto")),
+      cantidad: Number(campos.get("cantidad")),
+      precio_unitario: Number(campos.get("precio_unitario")),
+    };
+    const notas = String(campos.get("notas") ?? "").trim();
+    if (notas) {
+      detalle.notas = notas;
+    }
+    return detalle;
+  });
+  const botonGuardarPedido = formularioPedidoCompleto.querySelector(
+    'button[type="submit"]',
+  );
+  botonGuardarPedido.disabled = true;
+  try {
+    const creado = await peticion("/api/pedidos/con-detalles", {
+      method: "POST",
+      body: JSON.stringify({ pedido, detalles }),
+    });
+    mostrarMensaje(
+      `Pedido #${creado.pedido.id_pedido} creado con ${creado.detalles.length} detalle(s).`,
+    );
+    formularioPedidoCompleto.reset();
+    filasDetalles.replaceChildren();
+    agregarFilaDetalle();
+    if (recursoSelect.value === "pedidos") {
+      await cargarRegistros();
+    }
+  } catch (error) {
+    mostrarMensaje(error.message, "danger");
+  } finally {
+    botonGuardarPedido.disabled = false;
+  }
+});
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
@@ -307,4 +434,5 @@ formulario.addEventListener("submit", async (evento) => {
 });
 
 dibujarFormulario();
+agregarFilaDetalle();
 cargarRegistros();

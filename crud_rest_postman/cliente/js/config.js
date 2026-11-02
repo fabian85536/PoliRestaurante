@@ -74,4 +74,25 @@ export const RECURSOS = {
       { name: "fecha_cierre", label: "Fecha de cierre" },
     ],
   },
+  domicilios: {
+    label: "Domicilios",
+    id: "id_domicilio",
+    fields: [
+      { name: "id_pedido", label: "ID de pedido", type: "number" },
+      { name: "direccion", label: "Dirección" },
+      { name: "telefono", label: "Teléfono" },
+      { name: "costo_envio", label: "Costo de envío", type: "number" },
+    ],
+  },
+  detalles_pedido: {
+    label: "Detalles de pedido",
+    id: "id_detalle",
+    fields: [
+      { name: "id_pedido", label: "ID de pedido", type: "number" },
+      { name: "id_producto", label: "ID de producto", type: "number" },
+      { name: "cantidad", label: "Cantidad", type: "number" },
+      { name: "precio_unitario", label: "Precio unitario", type: "number" },
+      { name: "notas", label: "Notas" },
+    ],
+  },
 };

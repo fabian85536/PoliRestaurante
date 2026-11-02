@@ -2,6 +2,7 @@ from getpass import getpass
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from services.pedido_service import crear_pedido_con_detalles
 from ui.menu import obtener_entero, obtener_entrada, obtener_entrada_opcional
 
 MESERO_CAMPOS = (
@@ -28,6 +29,19 @@ PEDIDO_CAMPOS = (
     ("metodo_pago", "Método de pago", "opcional", False, None),
     ("fecha_creacion", "Fecha de creación", "opcional", False, None),
     ("fecha_cierre", "Fecha de cierre", "opcional", False, None),
+)
+DOMICILIO_CAMPOS = (
+    ("id_pedido", "ID del pedido (opcional)", "entero", False, 1),
+    ("direccion", "Dirección", "opcional", False, None),
+    ("telefono", "Teléfono", "opcional", False, None),
+    ("costo_envio", "Costo de envío", "entero", False, 0),
+)
+DETALLE_PEDIDO_CAMPOS = (
+    ("id_pedido", "ID del pedido (opcional)", "entero", False, 1),
+    ("id_producto", "ID del producto (opcional)", "entero", False, 1),
+    ("cantidad", "Cantidad", "entero", False, 0),
+    ("precio_unitario", "Precio unitario", "entero", False, 0),
+    ("notas", "Notas", "opcional", False, None),
 )
 
 
@@ -71,6 +85,47 @@ def _leer_secreto_obligatorio(prompt):
         if valor.strip():
             return valor
         print("El campo Contraseña es obligatorio.")
+
+
+def crear_pedido_con_detalles_interactivo(pedido_dao, detalle_dao):
+    print("\n=== CREAR PEDIDO CON DETALLES ===")
+    pedido = {
+        "tipo_pedido": obtener_entrada_opcional("Tipo de pedido (opcional): ")
+        or None,
+        "nombre_cliente": obtener_entrada_opcional("Nombre del cliente (opcional): ")
+        or None,
+        "estado": obtener_entrada_opcional("Estado (opcional): ") or None,
+        "total": obtener_entero(
+            "Total (opcional, entero no negativo): ", opcional=True, minimo=0
+        ),
+    }
+    cantidad_detalles = obtener_entero(
+        "Cantidad de productos en el pedido: ", minimo=1
+    )
+    detalles = []
+    for indice in range(1, cantidad_detalles + 1):
+        print(f"Detalle {indice}:")
+        detalles.append(
+            {
+                "id_producto": obtener_entero("ID del producto: ", minimo=1),
+                "cantidad": obtener_entero("Cantidad: ", minimo=1),
+                "precio_unitario": obtener_entero(
+                    "Precio unitario: ", minimo=0
+                ),
+                "notas": obtener_entrada_opcional("Notas (opcional): ") or None,
+            }
+        )
+
+    try:
+        pedido_id = crear_pedido_con_detalles(
+            pedido_dao, detalle_dao, pedido, detalles
+        )
+        print(
+            f"Pedido {pedido_id} creado con "
+            f"{cantidad_detalles} detalle(s)."
+        )
+    except (ValueError, SQLAlchemyError) as error:
+        print(f"No se pudo crear el pedido con sus detalles: {error}")
 
 
 def ejecutar_menu_entidad(

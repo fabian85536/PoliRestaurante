@@ -61,5 +61,7 @@ Pruebas de la API Flask:
 
 Ejecuta este comando desde `crud_rest_postman`. Para abrir la interfaz,
 inicia la API con `python .\crud_rest_postman\app.py` y abre
-`crud_rest_postman\cliente\index.html` con Live Server. GitHub Actions ejecuta
-ambas suites en cada push y pull request.
+`crud_rest_postman\cliente\index.html` con Live Server. El formulario
+"Crear pedido con productos" guarda el pedido y sus detalles en una sola
+transacción con `PedidoDAO` y `DetallePedidoDAO`. GitHub Actions ejecuta ambas
+suites en cada push y pull request.
