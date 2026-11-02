@@ -35,7 +35,7 @@ Este servidor integrado de Flask es para desarrollo local, no para producción.
    ```
 
 3. Abre la carpeta del repositorio en VS Code y sobre
-   `crud_rest_postman\cliente\cliente.html` selecciona **Open with Live Server**.
+   `crud_rest_postman\cliente\index.html` selecciona **Open with Live Server**.
    Por defecto el cliente estará en `http://127.0.0.1:5500`.
 
 La API permite CORS únicamente desde `http://127.0.0.1:5500` y
