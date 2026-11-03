@@ -20,6 +20,7 @@ let registros = [];
 let registroEditado = null;
 let temporizadorMensaje;
 let secuenciaDetalle = 0;
+let productosDisponibles = [];
 
 function recursoActual() {
   return RECURSOS[recursoSelect.value];
@@ -148,13 +149,44 @@ function actualizarBotonesEliminarDetalle() {
   }
 }
 
+filasDetalles.addEventListener("change", (evento) => {
+  const control = evento.target;
+  if (control.name !== "id_producto") {
+    return;
+  }
+  const fila = control.closest(".row");
+  const precio = control.selectedOptions[0]?.dataset.precio ?? "";
+  fila.querySelector('[name="precio_unitario"]').value = precio;
+  actualizarTotalPedido();
+});
+
+filasDetalles.addEventListener("input", (evento) => {
+  if (evento.target.name === "cantidad") {
+    actualizarTotalPedido();
+  }
+});
+
+function actualizarTotalPedido() {
+  const total = [...filasDetalles.children].reduce((suma, fila) => {
+    const cantidad = Number(fila.querySelector('[name="cantidad"]').value);
+    const precio = Number(
+      fila.querySelector('[name="precio_unitario"]').value,
+    );
+    if (!Number.isSafeInteger(cantidad) || !Number.isSafeInteger(precio)) {
+      return suma;
+    }
+    return suma + cantidad * precio;
+  }, 0);
+  formularioPedidoCompleto.elements.namedItem("total").value = String(total);
+}
+
 function agregarFilaDetalle() {
   const numeroFila = secuenciaDetalle;
   secuenciaDetalle += 1;
   const fila = document.createElement("div");
   fila.className = "row g-3 align-items-end border rounded p-3 mx-0";
   const campos = [
-    { name: "id_producto", label: "ID del producto", type: "number", min: "1" },
+    { name: "id_producto", label: "Producto", type: "select" },
     { name: "cantidad", label: "Cantidad", type: "number", min: "1" },
     {
       name: "precio_unitario",
@@ -168,21 +200,49 @@ function agregarFilaDetalle() {
   for (const campo of campos) {
     const columna = document.createElement("div");
     columna.className =
-      campo.name === "notas" ? "col-12 col-lg-3" : "col-6 col-lg-2";
+      campo.name === "notas"
+        ? "col-12 col-lg-3"
+        : campo.name === "id_producto"
+          ? "col-12 col-lg-3"
+          : "col-6 col-lg-2";
     const etiqueta = document.createElement("label");
     etiqueta.className = "form-label";
     etiqueta.textContent = campo.label;
-    const input = document.createElement("input");
-    input.className = "form-control";
-    input.name = campo.name;
-    input.type = campo.type;
-    input.required = campo.type === "number";
-    if (campo.min !== undefined) {
-      input.min = campo.min;
-      input.step = "1";
+    let input;
+    if (campo.type === "select") {
+      input = document.createElement("select");
+      input.className = "form-select";
+      input.name = campo.name;
+      input.required = true;
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Selecciona un producto";
+      input.append(placeholder);
+      for (const producto of productosDisponibles) {
+        const opcion = document.createElement("option");
+        opcion.value = String(producto.id);
+        opcion.textContent = `${producto.nombre} — $${producto.precio}`;
+        opcion.dataset.precio = String(producto.precio);
+        input.append(opcion);
+      }
+    } else {
+      input = document.createElement("input");
+      input.className = "form-control";
+      input.name = campo.name;
+      input.type = campo.type;
+      input.required = campo.type === "number";
+      if (campo.min !== undefined) {
+        input.min = campo.min;
+        input.step = "1";
+      }
     }
+    input.className ||= "form-control";
     etiqueta.htmlFor = `detalle-${campo.name}-${numeroFila}`;
     input.id = etiqueta.htmlFor;
+    if (campo.name === "precio_unitario") {
+      input.readOnly = true;
+      input.placeholder = "Lo determina el producto";
+    }
     columna.append(etiqueta, input);
     fila.append(columna);
   }
@@ -202,6 +262,58 @@ function agregarFilaDetalle() {
   fila.append(columnaAccion);
   filasDetalles.append(fila);
   actualizarBotonesEliminarDetalle();
+  actualizarTotalPedido();
+}
+
+async function cargarCatalogoProductos() {
+  const estadoCatalogo = document.querySelector("#mensaje-productos");
+  const botonCrearPedido = formularioPedidoCompleto.querySelector(
+    'button[type="submit"]',
+  );
+  try {
+    productosDisponibles = await peticion("/api/productos");
+    for (const fila of filasDetalles.children) {
+      const selector = fila.querySelector('[name="id_producto"]');
+      const productoSeleccionado = selector.value;
+      selector.replaceChildren();
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Selecciona un producto";
+      selector.append(placeholder);
+      for (const producto of productosDisponibles) {
+        const opcion = document.createElement("option");
+        opcion.value = String(producto.id);
+        opcion.textContent = `${producto.nombre} — $${producto.precio}`;
+        opcion.dataset.precio = String(producto.precio);
+        selector.append(opcion);
+      }
+      if (productosDisponibles.some(
+        (producto) => String(producto.id) === productoSeleccionado,
+      )) {
+        selector.value = productoSeleccionado;
+        const precio = selector.selectedOptions[0].dataset.precio;
+        fila.querySelector('[name="precio_unitario"]').value = precio;
+      } else {
+        fila.querySelector('[name="precio_unitario"]').value = "";
+      }
+    }
+    actualizarTotalPedido();
+    if (productosDisponibles.length === 0) {
+      estadoCatalogo.textContent =
+        "No hay productos registrados. Créelos primero en el recurso Productos.";
+      botonCrearPedido.disabled = true;
+      return;
+    }
+    estadoCatalogo.textContent =
+      "El precio unitario se obtiene del producto y el total se calcula automáticamente.";
+    botonCrearPedido.disabled = false;
+    if (filasDetalles.children.length === 0) {
+      agregarFilaDetalle();
+    }
+  } catch (error) {
+    estadoCatalogo.textContent = `No se pudo cargar el catálogo: ${error.message}`;
+    botonCrearPedido.disabled = true;
+  }
 }
 
 function dibujarFormulario(registro = null) {
@@ -368,17 +480,17 @@ formularioPedidoCompleto.addEventListener("submit", async (evento) => {
   }
   const detalles = [...filasDetalles.children].map((fila) => {
     const campos = Object.fromEntries(
-      [...fila.querySelectorAll("input")].map((input) => [
+      [...fila.querySelectorAll("input, select")].map((input) => [
         input.name,
         input.value,
       ]),
     );
     const detalle = {
-      id_producto: Number(campos.get("id_producto")),
-      cantidad: Number(campos.get("cantidad")),
-      precio_unitario: Number(campos.get("precio_unitario")),
+      id_producto: Number(campos.id_producto),
+      cantidad: Number(campos.cantidad),
+      precio_unitario: Number(campos.precio_unitario),
     };
-    const notas = String(campos.get("notas") ?? "").trim();
+    const notas = String(campos.notas ?? "").trim();
     if (notas) {
       detalle.notas = notas;
     }
@@ -426,6 +538,9 @@ formulario.addEventListener("submit", async (evento) => {
     mostrarMensaje(id === undefined ? "Registro creado." : "Cambios guardados.");
     cancelarEdicion();
     await cargarRegistros();
+    if (recurso === "productos") {
+      await cargarCatalogoProductos();
+    }
   } catch (error) {
     mostrarMensaje(error.message, "danger");
   } finally {
@@ -434,5 +549,5 @@ formulario.addEventListener("submit", async (evento) => {
 });
 
 dibujarFormulario();
-agregarFilaDetalle();
+cargarCatalogoProductos();
 cargarRegistros();
