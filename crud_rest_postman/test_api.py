@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
 from app import create_app
@@ -19,6 +19,13 @@ class SQLiteDatabase:
     def nueva_sesion(self):
         if self.engine is None:
             self.engine = create_engine(f"sqlite:///{self.database_path}")
+            event.listen(
+                self.engine,
+                "connect",
+                lambda connection, _record: connection.execute(
+                    "PRAGMA foreign_keys=ON"
+                ),
+            )
             self.engine_creations += 1
         self.sessions_created += 1
         return Session(self.engine, expire_on_commit=False)
@@ -493,6 +500,72 @@ class RestApiTests(unittest.TestCase):
                 ]
             ),
             0,
+        )
+
+    def test_edit_and_delete_order_with_details_and_delivery(self):
+        product = self.client.post(
+            "/api/productos",
+            json={"nombre": "Jugo", "precio": 5000},
+        )
+        self.assertEqual(product.status_code, 201)
+        product_id = self.response_json(product)["id"]
+
+        created = self.client.post(
+            "/api/pedidos/con-detalles",
+            json={
+                "pedido": {"tipo_pedido": "Mesa", "total": 5000},
+                "detalles": [
+                    {
+                        "id_producto": product_id,
+                        "cantidad": 1,
+                        "precio_unitario": 5000,
+                    }
+                ],
+            },
+        )
+        self.assertEqual(created.status_code, 201)
+        response = self.response_json(created)
+        order_id = response["pedido"]["id_pedido"]
+        detail_id = response["detalles"][0]["id_detalle"]
+
+        delivery = self.client.post(
+            "/api/domicilios",
+            json={
+                "id_pedido": order_id,
+                "direccion": "Calle 1",
+                "telefono": "3001234567",
+                "costo_envio": 5000,
+            },
+        )
+        self.assertEqual(delivery.status_code, 201)
+        delivery_id = self.response_json(delivery)["id_domicilio"]
+
+        updated_order = self.client.patch(
+            f"/api/pedidos/{order_id}", json={"estado": "Abierto"}
+        )
+        self.assertEqual(updated_order.status_code, 200)
+        self.assertEqual(self.response_json(updated_order)["estado"], "Abierto")
+        updated_detail = self.client.patch(
+            f"/api/detalles_pedido/{detail_id}", json={"cantidad": 2}
+        )
+        self.assertEqual(updated_detail.status_code, 200)
+        self.assertEqual(self.response_json(updated_detail)["cantidad"], 2)
+
+        self.assertEqual(
+            self.client.delete(f"/api/pedidos/{order_id}").status_code, 204
+        )
+        self.assertEqual(
+            self.client.get(f"/api/pedidos/{order_id}").status_code, 404
+        )
+        self.assertEqual(
+            self.client.get(f"/api/domicilios/{delivery_id}").status_code, 404
+        )
+        self.assertEqual(
+            self.client.get(f"/api/detalles_pedido/{detail_id}").status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get(f"/api/productos/{product_id}").status_code, 200
         )
 
     def test_invalid_payload_and_unknown_resource(self):

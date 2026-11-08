@@ -1,10 +1,12 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.administrador import Administrador
+from models.detalle_pedido import DetallePedido
+from models.domicilio import Domicilio
 from models.mesero import Mesero
 from models.mesa import Mesa
 from models.pedido import Pedido
@@ -112,6 +114,12 @@ class PedidoDAO:
             if pedido is None:
                 self.sesion.rollback()
                 return False
+            self.sesion.execute(
+                delete(DetallePedido).where(DetallePedido.id_pedido == id_pedido)
+            )
+            self.sesion.execute(
+                delete(Domicilio).where(Domicilio.id_pedido == id_pedido)
+            )
             self.sesion.delete(pedido)
             self.sesion.commit()
             return True

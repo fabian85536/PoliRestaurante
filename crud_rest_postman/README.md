@@ -39,7 +39,8 @@ Este servidor integrado de Flask es para desarrollo local, no para producción.
    Por defecto el cliente estará en `http://127.0.0.1:5500`.
 
 También puedes abrir `crud_rest_postman\cliente\index_pedidos.html` con Live
-Server para usar una página independiente de creación de pedidos con productos.
+Server para explorar el menú, seleccionar productos con sus precios y confirmar
+un pedido con su total calculado automáticamente.
 
 La API permite CORS únicamente desde `http://127.0.0.1:5500` y
 `http://localhost:5500`, los orígenes locales predeterminados de Live Server.
@@ -101,6 +102,8 @@ parcialmente y `DELETE /<id>` para eliminar:
 Para crear un pedido con sus productos en una sola transacción, envía
 `POST /api/pedidos/con-detalles` con un objeto `pedido` y una lista no vacía
 `detalles`. Si falla un detalle, también se revierte la creación del pedido.
+Al eliminar un pedido, también se eliminan sus detalles y el domicilio asociado,
+si existe; los productos no se eliminan.
 
 La ruta `GET /health` comprueba que el servicio está activo. Las respuestas de
 creación usan HTTP 201 y contienen el registro; las actualizaciones devuelven
