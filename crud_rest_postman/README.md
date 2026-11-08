@@ -38,6 +38,9 @@ Este servidor integrado de Flask es para desarrollo local, no para producción.
    `crud_rest_postman\cliente\index.html` selecciona **Open with Live Server**.
    Por defecto el cliente estará en `http://127.0.0.1:5500`.
 
+También puedes abrir `crud_rest_postman\cliente\index_pedidos.html` con Live
+Server para usar una página independiente de creación de pedidos con productos.
+
 La API permite CORS únicamente desde `http://127.0.0.1:5500` y
 `http://localhost:5500`, los orígenes locales predeterminados de Live Server.
 El cliente administra usuarios, productos, meseros, administradores, personal

@@ -1,6 +1,7 @@
 import { API_URL, RECURSOS } from "./config.js";
 
 const recursoSelect = document.querySelector("#recurso");
+const seccionCrearPedido = document.querySelector("#seccion-crear-pedido");
 const encabezadoTabla = document.querySelector("#encabezado-tabla");
 const tablaRegistros = document.querySelector("#tabla-registros");
 const formulario = document.querySelector("#formulario");
@@ -10,17 +11,10 @@ const mensaje = document.querySelector("#mensaje");
 const botonGuardar = document.querySelector("#btn-guardar");
 const botonCancelar = document.querySelector("#btn-cancelar");
 const botonRecargar = document.querySelector("#btn-recargar");
-const formularioPedidoCompleto = document.querySelector(
-  "#formulario-pedido-completo",
-);
-const filasDetalles = document.querySelector("#filas-detalles");
-const botonAgregarDetalle = document.querySelector("#btn-agregar-detalle");
 
 let registros = [];
 let registroEditado = null;
 let temporizadorMensaje;
-let secuenciaDetalle = 0;
-let productosDisponibles = [];
 
 function recursoActual() {
   return RECURSOS[recursoSelect.value];
@@ -140,180 +134,6 @@ function crearBoton(texto, clases, accion) {
   boton.textContent = texto;
   boton.addEventListener("click", accion);
   return boton;
-}
-
-function actualizarBotonesEliminarDetalle() {
-  const botones = filasDetalles.querySelectorAll("[data-eliminar-detalle]");
-  for (const boton of botones) {
-    boton.disabled = botones.length === 1;
-  }
-}
-
-filasDetalles.addEventListener("change", (evento) => {
-  const control = evento.target;
-  if (control.name !== "id_producto") {
-    return;
-  }
-  const fila = control.closest(".row");
-  const precio = control.selectedOptions[0]?.dataset.precio ?? "";
-  fila.querySelector('[name="precio_unitario"]').value = precio;
-  actualizarTotalPedido();
-});
-
-filasDetalles.addEventListener("input", (evento) => {
-  if (evento.target.name === "cantidad") {
-    actualizarTotalPedido();
-  }
-});
-
-function actualizarTotalPedido() {
-  const total = [...filasDetalles.children].reduce((suma, fila) => {
-    const cantidad = Number(fila.querySelector('[name="cantidad"]').value);
-    const precio = Number(
-      fila.querySelector('[name="precio_unitario"]').value,
-    );
-    if (!Number.isSafeInteger(cantidad) || !Number.isSafeInteger(precio)) {
-      return suma;
-    }
-    return suma + cantidad * precio;
-  }, 0);
-  formularioPedidoCompleto.elements.namedItem("total").value = String(total);
-}
-
-function agregarFilaDetalle() {
-  const numeroFila = secuenciaDetalle;
-  secuenciaDetalle += 1;
-  const fila = document.createElement("div");
-  fila.className = "row g-3 align-items-end border rounded p-3 mx-0";
-  const campos = [
-    { name: "id_producto", label: "Producto", type: "select" },
-    { name: "cantidad", label: "Cantidad", type: "number", min: "1" },
-    {
-      name: "precio_unitario",
-      label: "Precio unitario",
-      type: "number",
-      min: "0",
-    },
-    { name: "notas", label: "Notas", type: "text" },
-  ];
-
-  for (const campo of campos) {
-    const columna = document.createElement("div");
-    columna.className =
-      campo.name === "notas"
-        ? "col-12 col-lg-3"
-        : campo.name === "id_producto"
-          ? "col-12 col-lg-3"
-          : "col-6 col-lg-2";
-    const etiqueta = document.createElement("label");
-    etiqueta.className = "form-label";
-    etiqueta.textContent = campo.label;
-    let input;
-    if (campo.type === "select") {
-      input = document.createElement("select");
-      input.className = "form-select";
-      input.name = campo.name;
-      input.required = true;
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = "Selecciona un producto";
-      input.append(placeholder);
-      for (const producto of productosDisponibles) {
-        const opcion = document.createElement("option");
-        opcion.value = String(producto.id);
-        opcion.textContent = `${producto.nombre} — $${producto.precio}`;
-        opcion.dataset.precio = String(producto.precio);
-        input.append(opcion);
-      }
-    } else {
-      input = document.createElement("input");
-      input.className = "form-control";
-      input.name = campo.name;
-      input.type = campo.type;
-      input.required = campo.type === "number";
-      if (campo.min !== undefined) {
-        input.min = campo.min;
-        input.step = "1";
-      }
-    }
-    input.className ||= "form-control";
-    etiqueta.htmlFor = `detalle-${campo.name}-${numeroFila}`;
-    input.id = etiqueta.htmlFor;
-    if (campo.name === "precio_unitario") {
-      input.readOnly = true;
-      input.placeholder = "Lo determina el producto";
-    }
-    columna.append(etiqueta, input);
-    fila.append(columna);
-  }
-
-  const columnaAccion = document.createElement("div");
-  columnaAccion.className = "col-12 col-lg-2";
-  const eliminar = crearBoton(
-    "Quitar",
-    "btn btn-outline-danger w-100",
-    () => {
-      fila.remove();
-      actualizarBotonesEliminarDetalle();
-    },
-  );
-  eliminar.dataset.eliminarDetalle = "";
-  columnaAccion.append(eliminar);
-  fila.append(columnaAccion);
-  filasDetalles.append(fila);
-  actualizarBotonesEliminarDetalle();
-  actualizarTotalPedido();
-}
-
-async function cargarCatalogoProductos() {
-  const estadoCatalogo = document.querySelector("#mensaje-productos");
-  const botonCrearPedido = formularioPedidoCompleto.querySelector(
-    'button[type="submit"]',
-  );
-  try {
-    productosDisponibles = await peticion("/api/productos");
-    for (const fila of filasDetalles.children) {
-      const selector = fila.querySelector('[name="id_producto"]');
-      const productoSeleccionado = selector.value;
-      selector.replaceChildren();
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = "Selecciona un producto";
-      selector.append(placeholder);
-      for (const producto of productosDisponibles) {
-        const opcion = document.createElement("option");
-        opcion.value = String(producto.id);
-        opcion.textContent = `${producto.nombre} — $${producto.precio}`;
-        opcion.dataset.precio = String(producto.precio);
-        selector.append(opcion);
-      }
-      if (productosDisponibles.some(
-        (producto) => String(producto.id) === productoSeleccionado,
-      )) {
-        selector.value = productoSeleccionado;
-        const precio = selector.selectedOptions[0].dataset.precio;
-        fila.querySelector('[name="precio_unitario"]').value = precio;
-      } else {
-        fila.querySelector('[name="precio_unitario"]').value = "";
-      }
-    }
-    actualizarTotalPedido();
-    if (productosDisponibles.length === 0) {
-      estadoCatalogo.textContent =
-        "No hay productos registrados. Créelos primero en el recurso Productos.";
-      botonCrearPedido.disabled = true;
-      return;
-    }
-    estadoCatalogo.textContent =
-      "El precio unitario se obtiene del producto y el total se calcula automáticamente.";
-    botonCrearPedido.disabled = false;
-    if (filasDetalles.children.length === 0) {
-      agregarFilaDetalle();
-    }
-  } catch (error) {
-    estadoCatalogo.textContent = `No se pudo cargar el catálogo: ${error.message}`;
-    botonCrearPedido.disabled = true;
-  }
 }
 
 function dibujarFormulario(registro = null) {
@@ -457,69 +277,12 @@ recursoSelect.replaceChildren(
 );
 
 recursoSelect.addEventListener("change", () => {
+  seccionCrearPedido.classList.toggle("d-none", recursoSelect.value !== "pedidos");
   cancelarEdicion();
   cargarRegistros();
 });
 botonRecargar.addEventListener("click", cargarRegistros);
 botonCancelar.addEventListener("click", cancelarEdicion);
-botonAgregarDetalle.addEventListener("click", agregarFilaDetalle);
-
-formularioPedidoCompleto.addEventListener("submit", async (evento) => {
-  evento.preventDefault();
-  const datos = new FormData(formularioPedidoCompleto);
-  const pedido = {};
-  for (const campo of ["tipo_pedido", "nombre_cliente", "estado"]) {
-    const valor = String(datos.get(campo) ?? "").trim();
-    if (valor) {
-      pedido[campo] = valor;
-    }
-  }
-  const total = String(datos.get("total") ?? "").trim();
-  if (total) {
-    pedido.total = Number(total);
-  }
-  const detalles = [...filasDetalles.children].map((fila) => {
-    const campos = Object.fromEntries(
-      [...fila.querySelectorAll("input, select")].map((input) => [
-        input.name,
-        input.value,
-      ]),
-    );
-    const detalle = {
-      id_producto: Number(campos.id_producto),
-      cantidad: Number(campos.cantidad),
-      precio_unitario: Number(campos.precio_unitario),
-    };
-    const notas = String(campos.notas ?? "").trim();
-    if (notas) {
-      detalle.notas = notas;
-    }
-    return detalle;
-  });
-  const botonGuardarPedido = formularioPedidoCompleto.querySelector(
-    'button[type="submit"]',
-  );
-  botonGuardarPedido.disabled = true;
-  try {
-    const creado = await peticion("/api/pedidos/con-detalles", {
-      method: "POST",
-      body: JSON.stringify({ pedido, detalles }),
-    });
-    mostrarMensaje(
-      `Pedido #${creado.pedido.id_pedido} creado con ${creado.detalles.length} detalle(s).`,
-    );
-    formularioPedidoCompleto.reset();
-    filasDetalles.replaceChildren();
-    agregarFilaDetalle();
-    if (recursoSelect.value === "pedidos") {
-      await cargarRegistros();
-    }
-  } catch (error) {
-    mostrarMensaje(error.message, "danger");
-  } finally {
-    botonGuardarPedido.disabled = false;
-  }
-});
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
@@ -538,16 +301,13 @@ formulario.addEventListener("submit", async (evento) => {
     mostrarMensaje(id === undefined ? "Registro creado." : "Cambios guardados.");
     cancelarEdicion();
     await cargarRegistros();
-    if (recurso === "productos") {
-      await cargarCatalogoProductos();
-    }
   } catch (error) {
     mostrarMensaje(error.message, "danger");
   } finally {
     botonGuardar.disabled = false;
   }
 });
-
 dibujarFormulario();
-cargarCatalogoProductos();
+dibujarFormulario();
+seccionCrearPedido.classList.toggle("d-none", recursoSelect.value !== "pedidos");
 cargarRegistros();
