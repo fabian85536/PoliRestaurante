@@ -13,6 +13,19 @@ header {
   background: linear-gradient(120deg, var(--brand-dark), var(--brand));
 }
 
+.default-admin-control {
+  width: min(100%, 15rem);
+}
+
+.default-admin-control .form-select {
+  min-height: 2rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  border-color: rgb(255 255 255 / 55%);
+  background-color: rgb(255 255 255 / 96%);
+  font-size: 0.875rem;
+}
+
 .eyebrow {
   color: #f3c9a8;
   font-size: 0.75rem;

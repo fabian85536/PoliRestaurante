@@ -1,4 +1,5 @@
 export const API_URL = "http://127.0.0.1:5000";
+export const ADMINISTRADOR_SELECCIONADO_KEY = "polirestaurante.administrador";
 
 export const RECURSOS = {
   usuarios: {
@@ -17,7 +18,15 @@ export const RECURSOS = {
       { name: "descripcion", label: "Descripción" },
       { name: "precio", label: "Precio", type: "number", required: true },
       { name: "id_categoria", label: "ID de categoría", type: "number" },
-      { name: "id_administrador", label: "ID de administrador", type: "number" },
+      {
+        name: "id_administrador",
+        label: "Administrador",
+        relation: {
+          resource: "administradores",
+          valueField: "id_administrador",
+          labelFields: ["nombre", "usuario"],
+        },
+      },
       { name: "disponible", label: "Disponible", type: "checkbox", defaultValue: true },
     ],
   },
@@ -54,7 +63,15 @@ export const RECURSOS = {
     fields: [
       { name: "numero", label: "Número de mesa", type: "number", required: true },
       { name: "estado", label: "Estado", required: true },
-      { name: "id_administrador", label: "ID de administrador", type: "number" },
+      {
+        name: "id_administrador",
+        label: "Administrador",
+        relation: {
+          resource: "administradores",
+          valueField: "id_administrador",
+          labelFields: ["nombre", "usuario"],
+        },
+      },
     ],
   },
   pedidos: {
@@ -63,7 +80,15 @@ export const RECURSOS = {
     fields: [
       { name: "id_mesero", label: "ID de mesero", type: "number" },
       { name: "id_cocina", label: "ID de personal de cocina", type: "number" },
-      { name: "id_administrador", label: "ID de administrador", type: "number" },
+      {
+        name: "id_administrador",
+        label: "Administrador",
+        relation: {
+          resource: "administradores",
+          valueField: "id_administrador",
+          labelFields: ["nombre", "usuario"],
+        },
+      },
       { name: "id_mesa", label: "ID de mesa", type: "number" },
       { name: "tipo_pedido", label: "Tipo de pedido" },
       { name: "nombre_cliente", label: "Nombre del cliente" },

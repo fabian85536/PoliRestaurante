@@ -51,8 +51,11 @@ class Pedido(Base):
 
     def actualizar(self, **datos):
         for campo, valor in datos.items():
-            if valor is not None:
-                if campo.startswith("id_") or campo == "total":
+            if campo.startswith("id_"):
+                valor = int(valor) if valor is not None else None
+                setattr(self, campo, valor)
+            elif valor is not None:
+                if campo == "total":
                     valor = int(valor)
                 else:
                     valor = valor.strip()

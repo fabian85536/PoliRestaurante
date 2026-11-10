@@ -49,10 +49,17 @@ La API permite CORS únicamente desde `http://127.0.0.1:5500` y
 `http://localhost:5500`, los orígenes locales predeterminados de Live Server.
 El cliente administra usuarios, productos, meseros, administradores, personal
 de cocina, mesas, pedidos, domicilios y detalles de pedido. Para relaciones
-entre registros (por ejemplo, `id_mesa` o `id_mesero`), el formulario web no
-muestra campos de ID: al crear, las referencias quedan vacías cuando el esquema
-lo permite, y al editar se conservan. Para asignar referencias, envía los
-identificadores existentes directamente a la API.
+entre registros, los formularios ofrecen un selector de administradores para
+productos, mesas y pedidos. En las relaciones que todavía no tienen selector,
+el formulario no solicita IDs y las referencias se conservan al editar; usa la
+API para asignarlas.
+El panel de Administración incluye un selector de administrador predeterminado.
+La selección se guarda en el navegador y se asigna a productos, mesas y pedidos
+nuevos, incluidos los creados desde la pantalla del menú. Los registros
+existentes no se modifican; su administrador se conserva al editarlos.
+Al tener seleccionado el recurso Usuarios, su tabla consulta cambios
+automáticamente cada cinco segundos mientras la pestaña está visible y no se
+está editando un registro.
 Bootstrap se carga desde su CDN, por lo que la interfaz requiere conexión a
 Internet para los estilos.
 

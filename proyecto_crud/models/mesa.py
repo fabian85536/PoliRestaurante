@@ -5,6 +5,9 @@ from models.administrador import Administrador
 from models.usuario import Base
 
 
+_SIN_CAMBIO = object()
+
+
 class Mesa(Base):
     __tablename__ = "Mesa"
 
@@ -23,13 +26,19 @@ class Mesa(Base):
         if self.estado is not None:
             self.estado = self.estado.strip()
 
-    def actualizar(self, numero=None, estado=None, id_administrador=None):
+    def actualizar(
+        self, numero=None, estado=None, id_administrador=_SIN_CAMBIO
+    ):
         if numero is not None:
             self.numero = int(numero)
         if estado is not None:
             self.estado = estado.strip()
-        if id_administrador is not None:
-            self.id_administrador = int(id_administrador)
+        if id_administrador is not _SIN_CAMBIO:
+            self.id_administrador = (
+                int(id_administrador)
+                if id_administrador is not None
+                else None
+            )
         self.validar()
 
     def to_dict(self):

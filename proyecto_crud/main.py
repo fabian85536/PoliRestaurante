@@ -205,8 +205,12 @@ try:
                     nombre or None,
                     descripcion or None,
                     precio,
-                    id_categoria,
-                    id_administrador,
+                    id_categoria
+                    if id_categoria is not None
+                    else producto.id_categoria,
+                    id_administrador
+                    if id_administrador is not None
+                    else producto.id_administrador,
                     disponible,
                 ):
                     print("Producto actualizado")

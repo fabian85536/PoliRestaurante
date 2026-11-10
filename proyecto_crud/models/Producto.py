@@ -6,6 +6,9 @@ from models.administrador import Administrador
 from models.usuario import Base
 
 
+_SIN_CAMBIO = object()
+
+
 class Categoria(Base):
     __tablename__ = "Categoria"
 
@@ -63,8 +66,8 @@ class Producto(Base):
         nombre=None,
         descripcion=None,
         precio=None,
-        id_categoria=None,
-        id_administrador=None,
+        id_categoria=_SIN_CAMBIO,
+        id_administrador=_SIN_CAMBIO,
         disponible=None,
     ):
         if nombre is not None:
@@ -76,11 +79,17 @@ class Producto(Base):
         if precio is not None:
             self.precio = int(precio)
 
-        if id_categoria is not None:
-            self.id_categoria = int(id_categoria)
+        if id_categoria is not _SIN_CAMBIO:
+            self.id_categoria = (
+                int(id_categoria) if id_categoria is not None else None
+            )
 
-        if id_administrador is not None:
-            self.id_administrador = int(id_administrador)
+        if id_administrador is not _SIN_CAMBIO:
+            self.id_administrador = (
+                int(id_administrador)
+                if id_administrador is not None
+                else None
+            )
 
         if disponible is not None:
             self.disponible = disponible

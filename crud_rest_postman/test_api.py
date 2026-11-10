@@ -217,14 +217,30 @@ class RestApiTests(unittest.TestCase):
         )
 
     def test_product_and_order_crud(self):
+        admin = self.client.post(
+            "/api/administradores",
+            json={
+                "nombre": "Marta",
+                "usuario": "marta",
+                "contrasena": "secreto",
+            },
+        )
+        self.assertEqual(admin.status_code, 201)
+        admin_id = self.response_json(admin)["id_administrador"]
         product = self.client.post(
             "/api/productos",
-            json={"nombre": "Jugo", "precio": 8000, "disponible": True},
+            json={
+                "nombre": "Jugo",
+                "precio": 8000,
+                "disponible": True,
+                "id_administrador": admin_id,
+            },
         )
         self.assertEqual(product.status_code, 201)
         product_json = self.response_json(product)
         product_id = product_json["id"]
         self.assertTrue(product_json["disponible"])
+        self.assertEqual(product_json["id_administrador"], admin_id)
         self.assertEqual(
             self.client.get("/api/productos").status_code, 200
         )
@@ -244,7 +260,22 @@ class RestApiTests(unittest.TestCase):
             self.response_json(updated_product)["disponible"]
         )
         self.assertEqual(
+            self.response_json(updated_product)["id_administrador"],
+            admin_id,
+        )
+        unassigned_product = self.client.patch(
+            f"/api/productos/{product_id}",
+            json={"id_administrador": None},
+        )
+        self.assertIsNone(
+            self.response_json(unassigned_product)["id_administrador"]
+        )
+        self.assertEqual(
             self.client.delete(f"/api/productos/{product_id}").status_code,
+            204,
+        )
+        self.assertEqual(
+            self.client.delete(f"/api/administradores/{admin_id}").status_code,
             204,
         )
 
@@ -326,6 +357,24 @@ class RestApiTests(unittest.TestCase):
                 )
             )["estado"],
             "Ocupada",
+        )
+        self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/mesas/{table_id}")
+            )["id_administrador"],
+            admin_id,
+        )
+        unassigned_table = self.client.patch(
+            f"/api/mesas/{table_id}", json={"id_administrador": None}
+        )
+        self.assertIsNone(self.response_json(unassigned_table)["id_administrador"])
+        reassigned_table = self.client.patch(
+            f"/api/mesas/{table_id}",
+            json={"id_administrador": admin_id},
+        )
+        self.assertEqual(
+            self.response_json(reassigned_table)["id_administrador"],
+            admin_id,
         )
         self.assertEqual(
             self.client.delete(f"/api/mesas/{table_id}").status_code, 204

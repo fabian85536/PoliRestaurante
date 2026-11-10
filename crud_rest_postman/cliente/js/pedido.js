@@ -1,4 +1,7 @@
-import { API_URL } from "./config.js";
+import {
+  ADMINISTRADOR_SELECCIONADO_KEY,
+  API_URL,
+} from "./config.js";
 
 const formulario = document.querySelector("#formulario-pedido");
 const catalogo = document.querySelector("#catalogo-productos");
@@ -356,6 +359,12 @@ formulario.addEventListener("submit", async (evento) => {
     tipo_pedido: String(datos.get("tipo_pedido") ?? "").trim(),
     estado: "Pendiente",
   };
+  const administradorId = localStorage.getItem(
+    ADMINISTRADOR_SELECCIONADO_KEY,
+  );
+  if (administradorId) {
+    pedido.id_administrador = Number(administradorId);
+  }
   const cliente = String(datos.get("nombre_cliente") ?? "").trim();
   if (cliente) {
     pedido.nombre_cliente = cliente;

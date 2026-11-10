@@ -1,6 +1,13 @@
-import { API_URL, RECURSOS } from "./config.js";
+import {
+  ADMINISTRADOR_SELECCIONADO_KEY,
+  API_URL,
+  RECURSOS,
+} from "./config.js";
 
 const recursoSelect = document.querySelector("#recurso");
+const administradorPredeterminado = document.querySelector(
+  "#administrador-predeterminado",
+);
 const seccionCrearPedido = document.querySelector("#seccion-crear-pedido");
 const encabezadoTabla = document.querySelector("#encabezado-tabla");
 const tablaRegistros = document.querySelector("#tabla-registros");
@@ -13,8 +20,11 @@ const botonCancelar = document.querySelector("#btn-cancelar");
 const botonRecargar = document.querySelector("#btn-recargar");
 
 let registros = [];
+let administradores = [];
+let administradoresCargados = false;
 let registroEditado = null;
 let temporizadorMensaje;
+let cargandoRegistros = false;
 
 function recursoActual() {
   return RECURSOS[recursoSelect.value];
@@ -136,6 +146,64 @@ function crearBoton(texto, clases, accion) {
   return boton;
 }
 
+function actualizarOpcionesAdministradores() {
+  const valorAnterior = administradorPredeterminado.value;
+  const opciones = [crearOpcion("", "Sin asignar")];
+  for (const administrador of administradores) {
+    const nombre = [administrador.nombre, administrador.usuario]
+      .filter(Boolean)
+      .join(" · ");
+    opciones.push(
+      crearOpcion(
+        String(administrador.id_administrador),
+        `${nombre} (#${administrador.id_administrador})`,
+      ),
+    );
+  }
+  administradorPredeterminado.replaceChildren(...opciones);
+
+  const idGuardado = localStorage.getItem(ADMINISTRADOR_SELECCIONADO_KEY) ?? "";
+  const existeGuardado = administradores.some(
+    (administrador) => String(administrador.id_administrador) === idGuardado,
+  );
+  const siguienteValor = existeGuardado
+    ? idGuardado
+    : administradores.some(
+          (administrador) =>
+            String(administrador.id_administrador) === valorAnterior,
+        )
+      ? valorAnterior
+      : "";
+  administradorPredeterminado.value = siguienteValor;
+  if (siguienteValor) {
+    localStorage.setItem(ADMINISTRADOR_SELECCIONADO_KEY, siguienteValor);
+  } else {
+    localStorage.removeItem(ADMINISTRADOR_SELECCIONADO_KEY);
+  }
+}
+
+function crearOpcion(valor, texto) {
+  const opcion = document.createElement("option");
+  opcion.value = valor;
+  opcion.textContent = texto;
+  return opcion;
+}
+
+async function cargarAdministradores() {
+  try {
+    administradores = await peticion("/api/administradores");
+    administradoresCargados = true;
+    actualizarOpcionesAdministradores();
+  } catch (error) {
+    administradoresCargados = false;
+    mostrarMensaje(
+      `No se pudieron cargar los administradores: ${error.message}`,
+      "danger",
+    );
+    throw error;
+  }
+}
+
 function dibujarFormulario(registro = null) {
   const recurso = recursoActual();
   const edicion = registro !== null;
@@ -148,7 +216,7 @@ function dibujarFormulario(registro = null) {
 
   for (const campo of recurso.fields) {
     if (
-      campo.name.startsWith("id_") ||
+      (campo.name.startsWith("id_") && !campo.relation) ||
       campo.computed ||
       (edicion && campo.createOnly)
     ) {
@@ -177,6 +245,52 @@ function dibujarFormulario(registro = null) {
       etiqueta.textContent = campo.label;
       contenedor.append(input, etiqueta);
       columna.append(contenedor);
+    } else if (campo.relation) {
+      const etiqueta = document.createElement("label");
+      etiqueta.className = "form-label";
+      etiqueta.htmlFor = id;
+      etiqueta.textContent = campo.label;
+      const select = document.createElement("select");
+      select.className = "form-select";
+      select.id = id;
+      select.name = campo.name;
+      const relacionVacia = crearOpcion("", "Sin asignar");
+      select.append(relacionVacia);
+      for (const administrador of administradores) {
+        const nombre = [administrador.nombre, administrador.usuario]
+          .filter(Boolean)
+          .join(" · ");
+        select.append(
+          crearOpcion(
+            String(administrador[campo.relation.valueField]),
+            `${nombre} (#${administrador[campo.relation.valueField]})`,
+          ),
+        );
+      }
+      const valorActual = registro?.[campo.name];
+      if (
+        valorActual != null &&
+        !administradores.some(
+          (administrador) =>
+            String(administrador[campo.relation.valueField]) ===
+            String(valorActual),
+        )
+      ) {
+        select.append(
+          crearOpcion(
+            String(valorActual),
+            `Administrador #${valorActual} (no disponible)`,
+          ),
+        );
+      }
+      select.value = edicion
+        ? valorActual == null
+          ? ""
+          : String(valorActual)
+        : administradorPredeterminado.value;
+      columna.append(etiqueta, select);
+      camposFormulario.append(columna);
+      continue;
     } else {
       const etiqueta = document.createElement("label");
       etiqueta.className = "form-label";
@@ -204,15 +318,36 @@ function dibujarFormulario(registro = null) {
   }
 }
 
-async function cargarRegistros() {
-  mostrarCargando();
+async function cargarRegistros({ silencioso = false } = {}) {
+  if (cargandoRegistros) {
+    return;
+  }
+  cargandoRegistros = true;
+  const recurso = recursoSelect.value;
+  if (!silencioso) {
+    mostrarCargando();
+  }
   try {
-    registros = await peticion(`/api/${recursoSelect.value}`);
+    const nuevosRegistros = await peticion(`/api/${recurso}`);
+    if (recursoSelect.value !== recurso) {
+      return;
+    }
+    registros = nuevosRegistros;
     mostrarRegistros();
   } catch (error) {
-    registros = [];
-    mostrarRegistros();
+    if (recursoSelect.value !== recurso) {
+      return;
+    }
+    if (!silencioso) {
+      registros = [];
+      mostrarRegistros();
+    }
     mostrarMensaje(error.message, "danger");
+  } finally {
+    cargandoRegistros = false;
+    if (recursoSelect.value !== recurso) {
+      cargarRegistros();
+    }
   }
 }
 
@@ -221,7 +356,7 @@ function leerFormulario() {
   const recurso = recursoActual();
   for (const campo of recurso.fields) {
     if (
-      campo.name.startsWith("id_") ||
+      (campo.name.startsWith("id_") && !campo.relation) ||
       campo.computed ||
       (registroEditado && campo.createOnly)
     ) {
@@ -233,10 +368,15 @@ function leerFormulario() {
       continue;
     }
     const valor = control.value.trim();
+    if (campo.relation && !valor) {
+      payload[campo.name] = null;
+      continue;
+    }
     if (!valor && (registroEditado || !campo.required)) {
       continue;
     }
-    payload[campo.name] = campo.type === "number" ? Number(valor) : valor;
+    payload[campo.name] =
+      campo.type === "number" || campo.relation ? Number(valor) : valor;
   }
   return payload;
 }
@@ -263,6 +403,12 @@ async function eliminarRegistro(id) {
     if (registroEditado?.[recurso.id] === id) {
       cancelarEdicion();
     }
+    if (recursoSelect.value === "administradores") {
+      await cargarAdministradores();
+      if (!registroEditado) {
+        dibujarFormulario();
+      }
+    }
     await cargarRegistros();
   } catch (error) {
     mostrarMensaje(error.message, "danger");
@@ -284,6 +430,18 @@ recursoSelect.replaceChildren(
   }),
 );
 
+administradorPredeterminado.addEventListener("change", () => {
+  const seleccionado = administradorPredeterminado.value;
+  if (seleccionado) {
+    localStorage.setItem(ADMINISTRADOR_SELECCIONADO_KEY, seleccionado);
+  } else {
+    localStorage.removeItem(ADMINISTRADOR_SELECCIONADO_KEY);
+  }
+  if (!registroEditado) {
+    dibujarFormulario();
+  }
+});
+
 recursoSelect.addEventListener("change", () => {
   seccionCrearPedido.classList.toggle("d-none", recursoSelect.value !== "pedidos");
   cancelarEdicion();
@@ -291,14 +449,48 @@ recursoSelect.addEventListener("change", () => {
 });
 botonRecargar.addEventListener("click", cargarRegistros);
 window.addEventListener("focus", cargarRegistros);
+window.setInterval(() => {
+  if (
+    document.visibilityState === "visible" &&
+    recursoSelect.value === "usuarios" &&
+    !registroEditado
+  ) {
+    cargarRegistros({ silencioso: true });
+  }
+}, 5000);
 botonCancelar.addEventListener("click", cancelarEdicion);
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
-  const recurso = recursoSelect.value;
+  const recurso = recursoActual();
+  if (
+    !administradoresCargados &&
+    recurso.fields.some((campo) => campo.relation?.resource === "administradores")
+  ) {
+    mostrarMensaje(
+      "No se pudo cargar la lista de administradores. Recarga antes de guardar.",
+      "danger",
+    );
+    return;
+  }
+  if (
+    formulario.querySelector(
+      "select[data-relacion-pendiente], select[data-relacion-error]",
+    )
+  ) {
+    mostrarMensaje(
+      "Espera a que se cargue la lista de administradores antes de guardar.",
+      "warning",
+    );
+    return;
+  }
+  const recursoNombre = recursoSelect.value;
   const payload = leerFormulario();
   const id = registroEditado?.[recursoActual().id];
-  const ruta = id === undefined ? `/api/${recurso}` : `/api/${recurso}/${id}`;
+  const ruta =
+    id === undefined
+      ? `/api/${recursoNombre}`
+      : `/api/${recursoNombre}/${id}`;
   const metodo = id === undefined ? "POST" : "PATCH";
 
   botonGuardar.disabled = true;
@@ -309,6 +501,9 @@ formulario.addEventListener("submit", async (evento) => {
     });
     mostrarMensaje(id === undefined ? "Registro creado." : "Cambios guardados.");
     cancelarEdicion();
+    if (recursoNombre === "administradores") {
+      await cargarAdministradores();
+    }
     await cargarRegistros();
   } catch (error) {
     mostrarMensaje(error.message, "danger");
@@ -316,7 +511,15 @@ formulario.addEventListener("submit", async (evento) => {
     botonGuardar.disabled = false;
   }
 });
-dibujarFormulario();
-dibujarFormulario();
-seccionCrearPedido.classList.toggle("d-none", recursoSelect.value !== "pedidos");
-cargarRegistros();
+async function inicializar() {
+  try {
+    await cargarAdministradores();
+  } catch {
+    administradores = [];
+  }
+  dibujarFormulario();
+  seccionCrearPedido.classList.toggle("d-none", recursoSelect.value !== "pedidos");
+  await cargarRegistros();
+}
+
+inicializar();

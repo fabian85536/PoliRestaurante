@@ -7,6 +7,9 @@ from sqlalchemy.orm import Session
 from models.Producto import Administrador, Categoria, Producto
 
 
+_SIN_CAMBIO = object()
+
+
 class ProductoDAO:
     def __init__(self, sesion: Session):
         self.sesion = sesion
@@ -90,8 +93,8 @@ class ProductoDAO:
         nombre=None,
         descripcion=None,
         precio=None,
-        id_categoria=None,
-        id_administrador=None,
+        id_categoria=_SIN_CAMBIO,
+        id_administrador=_SIN_CAMBIO,
         disponible=None,
     ):
         try:
@@ -99,14 +102,27 @@ class ProductoDAO:
             if producto is None:
                 self.sesion.rollback()
                 return False
-            self._validar_referencias(id_categoria, id_administrador)
+            if (
+                id_categoria is not _SIN_CAMBIO
+                or id_administrador is not _SIN_CAMBIO
+            ):
+                self._validar_referencias(
+                    None if id_categoria is _SIN_CAMBIO else id_categoria,
+                    None
+                    if id_administrador is _SIN_CAMBIO
+                    else id_administrador,
+                )
+            referencias = {}
+            if id_categoria is not _SIN_CAMBIO:
+                referencias["id_categoria"] = id_categoria
+            if id_administrador is not _SIN_CAMBIO:
+                referencias["id_administrador"] = id_administrador
             producto.actualizar(
                 nombre=nombre,
                 descripcion=descripcion,
                 precio=precio,
-                id_categoria=id_categoria,
-                id_administrador=id_administrador,
                 disponible=disponible,
+                **referencias,
             )
             self.sesion.commit()
             return True
