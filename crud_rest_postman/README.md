@@ -40,7 +40,10 @@ Este servidor integrado de Flask es para desarrollo local, no para producción.
 
 También puedes abrir `crud_rest_postman\cliente\index_pedidos.html` con Live
 Server para explorar el menú, seleccionar productos con sus precios y confirmar
-un pedido con su total calculado automáticamente.
+un pedido con su total calculado automáticamente. En esa pantalla también
+puedes seleccionar un pedido existente creado desde Administración para
+agregarle productos; el total se recalcula con todos sus detalles, y se
+completan el estado y la fecha de creación si estaban vacíos.
 
 La API permite CORS únicamente desde `http://127.0.0.1:5500` y
 `http://localhost:5500`, los orígenes locales predeterminados de Live Server.
@@ -104,6 +107,12 @@ parcialmente y `DELETE /<id>` para eliminar:
 Para crear un pedido con sus productos en una sola transacción, envía
 `POST /api/pedidos/con-detalles` con un objeto `pedido` y una lista no vacía
 `detalles`. Si falla un detalle, también se revierte la creación del pedido.
+Para agregar productos a un pedido existente, envía
+`POST /api/pedidos/<id_pedido>/con-detalles` con `detalles` y, opcionalmente,
+`tipo_pedido` y `nombre_cliente` para completar esos datos si están vacíos.
+En ambos flujos el total se calcula desde las cantidades y precios unitarios;
+si faltan, se asignan el estado `Pendiente` y la fecha de creación. Crear,
+editar o eliminar detalles también recalcula el total del pedido relacionado.
 Al eliminar un pedido, también se eliminan sus detalles y el domicilio asociado,
 si existe; los productos no se eliminan.
 

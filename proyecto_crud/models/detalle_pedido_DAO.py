@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -37,6 +37,8 @@ class DetallePedidoDAO:
                 precio_unitario=precio_unitario,
                 notas=notas,
             )
+            if id_pedido is not None:
+                self.recalcular_total_pedido(id_pedido)
             self.sesion.commit()
             logging.info("Detalle de pedido creado: %s", detalle_id)
             return detalle_id
@@ -86,12 +88,30 @@ class DetallePedidoDAO:
     def obtener_por_id(self, id_detalle):
         return self.sesion.get(DetallePedido, id_detalle)
 
+    def recalcular_total_pedido(self, id_pedido):
+        pedido = self.sesion.get(Pedido, id_pedido)
+        if pedido is None:
+            return None
+        total = self.sesion.scalar(
+            select(
+                func.coalesce(
+                    func.sum(
+                        DetallePedido.cantidad * DetallePedido.precio_unitario
+                    ),
+                    0,
+                )
+            ).where(DetallePedido.id_pedido == id_pedido)
+        )
+        pedido.total = int(total)
+        return pedido.total
+
     def actualizar(self, id_detalle, **datos):
         try:
             detalle = self.obtener_por_id(id_detalle)
             if detalle is None:
                 self.sesion.rollback()
                 return False
+            pedido_anterior = detalle.id_pedido
             referencias = {
                 campo: int(datos[campo]) if datos[campo] is not None else None
                 for campo in ("id_pedido", "id_producto")
@@ -102,6 +122,8 @@ class DetallePedidoDAO:
                 referencias.get("id_producto", detalle.id_producto),
             )
             detalle.actualizar(**datos)
+            for pedido_id in {pedido_anterior, detalle.id_pedido} - {None}:
+                self.recalcular_total_pedido(pedido_id)
             self.sesion.commit()
             return True
         except ValueError:
@@ -124,7 +146,10 @@ class DetallePedidoDAO:
             if detalle is None:
                 self.sesion.rollback()
                 return False
+            pedido_id = detalle.id_pedido
             self.sesion.delete(detalle)
+            if pedido_id is not None:
+                self.recalcular_total_pedido(pedido_id)
             self.sesion.commit()
             return True
         except Exception:

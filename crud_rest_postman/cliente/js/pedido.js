@@ -10,6 +10,9 @@ const mensaje = document.querySelector("#mensaje");
 const mensajeProductos = document.querySelector("#mensaje-productos");
 const busqueda = document.querySelector("#buscar-producto");
 const botonCrearPedido = document.querySelector("#btn-crear-pedido");
+const pedidoExistente = document.querySelector("#pedido-existente");
+const tipoPedido = document.querySelector("#pedido-tipo");
+const nombreCliente = document.querySelector("#pedido-cliente");
 
 const formatoPrecio = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -18,6 +21,7 @@ const formatoPrecio = new Intl.NumberFormat("es-CO", {
 });
 
 let productosDisponibles = [];
+let pedidosDisponibles = [];
 const productosSeleccionados = new Map();
 let enviandoPedido = false;
 
@@ -133,6 +137,9 @@ function actualizarResumen() {
     cantidadTotal === 1 ? "producto" : "productos"
   }`;
   totalPedido.textContent = formatoPrecio.format(total);
+  botonCrearPedido.textContent = pedidoExistente.value
+    ? "Agregar productos al pedido"
+    : "Confirmar pedido";
   botonCrearPedido.disabled = seleccion.length === 0 || enviandoPedido;
 }
 
@@ -216,6 +223,70 @@ async function cargarProductos() {
   }
 }
 
+async function cargarPedidos() {
+  try {
+    const seleccionAnterior = pedidoExistente.value;
+    pedidosDisponibles = await peticion("/api/pedidos");
+    const opciones = [
+      crearElemento("option", "", "Crear un pedido nuevo"),
+      ...pedidosDisponibles.map((pedido) => {
+        const detalles = [
+          pedido.tipo_pedido,
+          pedido.nombre_cliente,
+          pedido.estado,
+        ].filter(Boolean);
+        const descripcion = detalles.length
+          ? detalles.join(" · ")
+          : "Sin datos adicionales";
+        const opcion = crearElemento(
+          "option",
+          "",
+          `Pedido #${pedido.id_pedido} · ${descripcion}`,
+        );
+        opcion.value = String(pedido.id_pedido);
+        return opcion;
+      }),
+    ];
+    pedidoExistente.replaceChildren(...opciones);
+    if (pedidosDisponibles.some(
+      (pedido) => String(pedido.id_pedido) === seleccionAnterior,
+    )) {
+      pedidoExistente.value = seleccionAnterior;
+    }
+    actualizarResumen();
+  } catch (error) {
+    mostrarMensaje(
+      `No se pudieron cargar los pedidos existentes: ${error.message}`,
+      "danger",
+    );
+  }
+}
+
+function actualizarDatosPedidoSeleccionado() {
+  const pedido = pedidosDisponibles.find(
+    (item) => String(item.id_pedido) === pedidoExistente.value,
+  );
+  if (!pedido) {
+    actualizarResumen();
+    return;
+  }
+
+  if (
+    pedido.tipo_pedido &&
+    ![...tipoPedido.options].some(
+      (opcion) => opcion.value === pedido.tipo_pedido,
+    )
+  ) {
+    tipoPedido.add(
+      crearElemento("option", "", pedido.tipo_pedido),
+    );
+    tipoPedido.lastElementChild.value = pedido.tipo_pedido;
+  }
+  tipoPedido.value = pedido.tipo_pedido ?? "";
+  nombreCliente.value = pedido.nombre_cliente ?? "";
+  actualizarResumen();
+}
+
 catalogo.addEventListener("click", (evento) => {
   const boton = evento.target.closest("[data-agregar-producto]");
   if (!boton) {
@@ -271,6 +342,7 @@ carrito.addEventListener("input", (evento) => {
 });
 
 busqueda.addEventListener("input", () => dibujarCatalogo(busqueda.value));
+pedidoExistente.addEventListener("change", actualizarDatosPedidoSeleccionado);
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
@@ -281,16 +353,12 @@ formulario.addEventListener("submit", async (evento) => {
   const datos = new FormData(formulario);
   const seleccion = [...productosSeleccionados.values()];
   const pedido = {
-    tipo_pedido: String(datos.get("tipo_pedido")).trim(),
+    tipo_pedido: String(datos.get("tipo_pedido") ?? "").trim(),
     estado: "Pendiente",
-    total: seleccion.reduce(
-      (suma, item) => suma + item.producto.precio * item.cantidad,
-      0,
-    ),
   };
-  const nombreCliente = String(datos.get("nombre_cliente") ?? "").trim();
-  if (nombreCliente) {
-    pedido.nombre_cliente = nombreCliente;
+  const cliente = String(datos.get("nombre_cliente") ?? "").trim();
+  if (cliente) {
+    pedido.nombre_cliente = cliente;
   }
   const detalles = seleccion.map(({ producto, cantidad, notas }) => {
     const detalle = {
@@ -307,16 +375,26 @@ formulario.addEventListener("submit", async (evento) => {
   enviandoPedido = true;
   actualizarResumen();
   try {
-    const creado = await peticion("/api/pedidos/con-detalles", {
+    const idPedido = pedidoExistente.value;
+    const ruta = idPedido
+      ? `/api/pedidos/${idPedido}/con-detalles`
+      : "/api/pedidos/con-detalles";
+    const datosPedido = idPedido
+      ? { tipo_pedido: pedido.tipo_pedido, nombre_cliente: cliente, detalles }
+      : { pedido, detalles };
+    const creado = await peticion(ruta, {
       method: "POST",
-      body: JSON.stringify({ pedido, detalles }),
+      body: JSON.stringify(datosPedido),
     });
     mostrarMensaje(
-      `¡Pedido confirmado! Número #${creado.pedido.id_pedido}. Total: ${formatoPrecio.format(pedido.total)}.`,
+      idPedido
+        ? `Productos agregados al pedido #${creado.pedido.id_pedido}. Total actualizado: ${formatoPrecio.format(creado.pedido.total)}.`
+        : `¡Pedido confirmado! Número #${creado.pedido.id_pedido}. Total: ${formatoPrecio.format(creado.pedido.total)}.`,
     );
     formulario.reset();
     productosSeleccionados.clear();
     dibujarCarrito();
+    await cargarPedidos();
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
     mostrarMensaje(error.message, "danger");
@@ -328,3 +406,4 @@ formulario.addEventListener("submit", async (evento) => {
 
 actualizarResumen();
 cargarProductos();
+cargarPedidos();

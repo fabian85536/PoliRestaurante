@@ -147,7 +147,11 @@ function dibujarFormulario(registro = null) {
   botonCancelar.classList.toggle("d-none", !edicion);
 
   for (const campo of recurso.fields) {
-    if (campo.name.startsWith("id_") || (edicion && campo.createOnly)) {
+    if (
+      campo.name.startsWith("id_") ||
+      campo.computed ||
+      (edicion && campo.createOnly)
+    ) {
       continue;
     }
 
@@ -218,6 +222,7 @@ function leerFormulario() {
   for (const campo of recurso.fields) {
     if (
       campo.name.startsWith("id_") ||
+      campo.computed ||
       (registroEditado && campo.createOnly)
     ) {
       continue;
@@ -285,6 +290,7 @@ recursoSelect.addEventListener("change", () => {
   cargarRegistros();
 });
 botonRecargar.addEventListener("click", cargarRegistros);
+window.addEventListener("focus", cargarRegistros);
 botonCancelar.addEventListener("click", cancelarEdicion);
 
 formulario.addEventListener("submit", async (evento) => {

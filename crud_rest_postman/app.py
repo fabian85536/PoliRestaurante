@@ -24,7 +24,10 @@ from models.personal_cocina_DAO import PersonalCocinaDAO
 from models.producto_DAO import ProductoDAO
 from models.usuario import Usuario
 from models.usuario_DAO import UsuarioDAO
-from services.pedido_service import crear_pedido_con_detalles
+from services.pedido_service import (
+    agregar_detalles_a_pedido,
+    crear_pedido_con_detalles,
+)
 
 
 @dataclass(frozen=True)
@@ -333,26 +336,9 @@ def _update_order_detail(
     return dao.actualizar(detail_id, **data)
 
 
-def _create_complete_order(payload: dict) -> int:
-    _validate_fields(payload, {"pedido", "detalles"}, {"pedido", "detalles"})
-    order_data = payload["pedido"]
-    details_data = payload["detalles"]
-    if not isinstance(order_data, dict):
-        raise ValueError("'pedido' debe ser un objeto JSON.")
+def _normalize_order_details(details_data: Any) -> list[dict]:
     if not isinstance(details_data, list) or not details_data:
         raise ValueError("Incluye al menos un detalle de pedido.")
-
-    pedido_dao = PedidoDAO(g.sesion)
-    _required_fields(order_data, pedido_dao.CAMPOS)
-    normalized_order = dict(order_data)
-    for field in pedido_dao.CAMPOS:
-        if field.startswith("id_") or field == "total":
-            if field in normalized_order:
-                normalized_order[field] = _integer(
-                    normalized_order[field], field, nullable=True
-                )
-        elif field in normalized_order:
-            normalized_order[field] = _string(normalized_order, field)
 
     normalized_details = []
     detail_fields = {"id_producto", "cantidad", "precio_unitario", "notas"}
@@ -370,10 +356,59 @@ def _create_complete_order(payload: dict) -> int:
         if "notas" in data:
             data["notas"] = _string(data, "notas")
         normalized_details.append(data)
+    return normalized_details
+
+
+def _create_complete_order(payload: dict) -> int:
+    _validate_fields(payload, {"pedido", "detalles"}, {"pedido", "detalles"})
+    order_data = payload["pedido"]
+    if not isinstance(order_data, dict):
+        raise ValueError("'pedido' debe ser un objeto JSON.")
+
+    pedido_dao = PedidoDAO(g.sesion)
+    _required_fields(order_data, pedido_dao.CAMPOS)
+    normalized_order = dict(order_data)
+    for field in pedido_dao.CAMPOS:
+        if field.startswith("id_") or field == "total":
+            if field in normalized_order:
+                normalized_order[field] = _integer(
+                    normalized_order[field], field, nullable=True
+                )
+        elif field in normalized_order:
+            normalized_order[field] = _string(normalized_order, field)
+
+    normalized_details = _normalize_order_details(payload["detalles"])
 
     detalle_dao = DetallePedidoDAO(g.sesion)
     return crear_pedido_con_detalles(
         pedido_dao, detalle_dao, normalized_order, normalized_details
+    )
+
+
+def _attach_order_details(order_id: int, payload: dict) -> int | None:
+    fields = {"tipo_pedido", "nombre_cliente", "detalles"}
+    _validate_fields(payload, fields, {"detalles"})
+    pedido_dao = PedidoDAO(g.sesion)
+    pedido = pedido_dao.obtener_por_id(order_id)
+    if pedido is None:
+        return None
+
+    tipo_pedido = (
+        _string(payload, "tipo_pedido") if "tipo_pedido" in payload else None
+    )
+    nombre_cliente = (
+        _string(payload, "nombre_cliente")
+        if "nombre_cliente" in payload
+        else None
+    )
+    normalized_details = _normalize_order_details(payload["detalles"])
+    return agregar_detalles_a_pedido(
+        pedido_dao,
+        DetallePedidoDAO(g.sesion),
+        pedido,
+        normalized_details,
+        tipo_pedido=tipo_pedido,
+        nombre_cliente=nombre_cliente,
     )
 
 
@@ -503,6 +538,31 @@ def create_app(database_factory: Callable[[], Any] = Database) -> Flask:
                 ],
             }
         ), 201
+
+    @app.post("/api/pedidos/<int:order_id>/con-detalles")
+    def attach_order_details(order_id):
+        pedido_id = _attach_order_details(order_id, _object_payload())
+        if pedido_id is None:
+            return jsonify(error="Pedido no encontrado."), 404
+        pedido = resources["pedidos"].find_record(
+            PedidoDAO(g.sesion), pedido_id
+        )
+        detalles = [
+            detalle
+            for detalle in resources["detalles_pedido"].list_records(
+                DetallePedidoDAO(g.sesion)
+            )
+            if detalle.id_pedido == pedido_id
+        ]
+        return jsonify(
+            {
+                "pedido": resources["pedidos"].serialize(pedido),
+                "detalles": [
+                    resources["detalles_pedido"].serialize(detalle)
+                    for detalle in detalles
+                ],
+            }
+        )
 
     @app.route("/api/<entity>", methods=["GET", "POST"])
     def collection(entity):

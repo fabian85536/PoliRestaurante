@@ -394,6 +394,12 @@ class RestApiTests(unittest.TestCase):
         self.assertEqual(detail.status_code, 201)
         detail_id = self.response_json(detail)["id_detalle"]
         self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/pedidos/{order_id}")
+            )["total"],
+            10000,
+        )
+        self.assertEqual(
             self.client.get("/api/detalles_pedido").status_code, 200
         )
         self.assertEqual(
@@ -410,6 +416,12 @@ class RestApiTests(unittest.TestCase):
             200,
         )
         self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/pedidos/{order_id}")
+            )["total"],
+            15000,
+        )
+        self.assertEqual(
             self.client.post(
                 "/api/detalles_pedido",
                 json={"id_pedido": order_id, "id_producto": 999},
@@ -421,8 +433,84 @@ class RestApiTests(unittest.TestCase):
             204,
         )
         self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/pedidos/{order_id}")
+            )["total"],
+            0,
+        )
+        self.assertEqual(
             self.client.delete(f"/api/domicilios/{delivery_id}").status_code,
             204,
+        )
+
+    def test_existing_order_can_receive_products_and_recalculate_total(self):
+        created_order = self.client.post(
+            "/api/pedidos",
+            json={"total": 12345},
+        )
+        self.assertEqual(created_order.status_code, 201)
+        order_id = self.response_json(created_order)["id_pedido"]
+        product = self.client.post(
+            "/api/productos",
+            json={"nombre": "Jugo", "precio": 5000},
+        )
+        product_id = self.response_json(product)["id"]
+
+        updated = self.client.post(
+            f"/api/pedidos/{order_id}/con-detalles",
+            json={
+                "tipo_pedido": "Mesa",
+                "nombre_cliente": "Ana",
+                "detalles": [
+                    {
+                        "id_producto": product_id,
+                        "cantidad": 2,
+                        "precio_unitario": 5000,
+                    }
+                ],
+            },
+        )
+
+        self.assertEqual(updated.status_code, 200)
+        response = self.response_json(updated)
+        self.assertEqual(response["pedido"]["id_pedido"], order_id)
+        self.assertEqual(response["pedido"]["tipo_pedido"], "Mesa")
+        self.assertEqual(response["pedido"]["nombre_cliente"], "Ana")
+        self.assertEqual(response["pedido"]["total"], 10000)
+        self.assertEqual(response["pedido"]["estado"], "Pendiente")
+        self.assertTrue(response["pedido"]["fecha_creacion"])
+        self.assertEqual(len(response["detalles"]), 1)
+
+        rejected = self.client.post(
+            f"/api/pedidos/{order_id}/con-detalles",
+            json={
+                "detalles": [
+                    {
+                        "id_producto": product_id,
+                        "cantidad": 1,
+                        "precio_unitario": 5000,
+                    },
+                    {
+                        "id_producto": 999,
+                        "cantidad": 1,
+                        "precio_unitario": 5000,
+                    },
+                ]
+            },
+        )
+        self.assertEqual(rejected.status_code, 400)
+        self.assertEqual(
+            self.response_json(
+                self.client.get(f"/api/pedidos/{order_id}")
+            )["total"],
+            10000,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/pedidos/999/con-detalles",
+                json={"detalles": [{"id_producto": product_id}]},
+            ).status_code,
+            404,
         )
 
     def test_create_order_with_details_uses_both_daos_atomically(self):
@@ -459,6 +547,9 @@ class RestApiTests(unittest.TestCase):
         self.assertEqual(created.status_code, 201)
         response = self.response_json(created)
         self.assertEqual(response["pedido"]["nombre_cliente"], "Ana")
+        self.assertEqual(response["pedido"]["total"], 15000)
+        self.assertEqual(response["pedido"]["estado"], "Pendiente")
+        self.assertTrue(response["pedido"]["fecha_creacion"])
         self.assertEqual(len(response["detalles"]), 2)
         order_id = response["pedido"]["id_pedido"]
         self.assertEqual(

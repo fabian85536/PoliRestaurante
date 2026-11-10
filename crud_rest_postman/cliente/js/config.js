@@ -68,7 +68,7 @@ export const RECURSOS = {
       { name: "tipo_pedido", label: "Tipo de pedido" },
       { name: "nombre_cliente", label: "Nombre del cliente" },
       { name: "estado", label: "Estado" },
-      { name: "total", label: "Total", type: "number" },
+      { name: "total", label: "Total", type: "number", computed: true },
       { name: "metodo_pago", label: "Método de pago" },
       { name: "fecha_creacion", label: "Fecha de creación" },
       { name: "fecha_cierre", label: "Fecha de cierre" },
