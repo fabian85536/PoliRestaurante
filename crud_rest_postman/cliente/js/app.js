@@ -147,7 +147,7 @@ function dibujarFormulario(registro = null) {
   botonCancelar.classList.toggle("d-none", !edicion);
 
   for (const campo of recurso.fields) {
-    if (edicion && campo.createOnly) {
+    if (campo.name.startsWith("id_") || (edicion && campo.createOnly)) {
       continue;
     }
 
@@ -216,7 +216,10 @@ function leerFormulario() {
   const payload = {};
   const recurso = recursoActual();
   for (const campo of recurso.fields) {
-    if (registroEditado && campo.createOnly) {
+    if (
+      campo.name.startsWith("id_") ||
+      (registroEditado && campo.createOnly)
+    ) {
       continue;
     }
     const control = formulario.elements.namedItem(campo.name);

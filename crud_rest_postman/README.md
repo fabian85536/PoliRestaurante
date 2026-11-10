@@ -46,8 +46,10 @@ La API permite CORS únicamente desde `http://127.0.0.1:5500` y
 `http://localhost:5500`, los orígenes locales predeterminados de Live Server.
 El cliente administra usuarios, productos, meseros, administradores, personal
 de cocina, mesas, pedidos, domicilios y detalles de pedido. Para relaciones
-entre registros (por ejemplo, `id_mesa` o `id_mesero`) se escriben los
-identificadores existentes.
+entre registros (por ejemplo, `id_mesa` o `id_mesero`), el formulario web no
+muestra campos de ID: al crear, las referencias quedan vacías cuando el esquema
+lo permite, y al editar se conservan. Para asignar referencias, envía los
+identificadores existentes directamente a la API.
 Bootstrap se carga desde su CDN, por lo que la interfaz requiere conexión a
 Internet para los estilos.
 
